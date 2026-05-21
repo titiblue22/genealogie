@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Généalogie">
+<link rel="apple-touch-icon" sizes="180x180" id="touch-icon">
+<script>
+// Generate crisp 180x180 PNG icon via canvas (runs before body loads)
+(function(){
+  try{
+    const c=document.createElement('canvas');c.width=180;c.height=180;
+    const x=c.getContext('2d');
+    // Background
+    x.fillStyle='#0c1118';x.fillRect(0,0,180,180);
+    // Gold rounded square
+    const r=22,m=14;
+    x.beginPath();x.moveTo(m+r,m);x.lineTo(180-m-r,m);x.quadraticCurveTo(180-m,m,180-m,m+r);
+    x.lineTo(180-m,180-m-r);x.quadraticCurveTo(180-m,180-m,180-m-r,180-m);
+    x.lineTo(m+r,180-m);x.quadraticCurveTo(m,180-m,m,180-m-r);
+    x.lineTo(m,m+r);x.quadraticCurveTo(m,m,m+r,m);x.closePath();
+    x.fillStyle='#c9a84c';x.fill();
+    // G letter
+    x.fillStyle='#0c1118';x.font='bold 96px Lato,Arial,sans-serif';
+    x.textAlign='center';x.textBaseline='middle';x.fillText('G',90,95);
+    const dataURL=c.toDataURL('image/png');
+    document.getElementById('touch-icon').href=dataURL;
+  }catch(e){}
+})();
+</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230c1118'/%3E%3Crect x='3' y='3' width='26' height='26' rx='6' fill='%23c9a84c'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Lato,sans-serif' font-size='17' font-weight='900' fill='%230c1118'%3EG%3C/text%3E%3C/svg%3E">
+<title>Généalogie</title>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0c1118;--bg2:#131b26;--card:#1a2436;--border:#243348;--border2:#2e4060;
+  --text:#e8edf5;--muted:#7a92b0;--subtle:#3d5270;
+  --gold:#c9a84c;--gold2:#e8c96a;--blue:#4a90d9;--blue2:#6aaef0;
+  --green:#3a9e7a;--green2:#52c49a;--red:#c0392b;--red2:#e05a4b;--amber:#d4862a;
+  --badge-n-bg:#0e3528;--badge-n-t:#52c49a;--badge-m-bg:#3d2200;--badge-m-t:#f5c06a;
+  --badge-d-bg:#1e293b;--badge-d-t:#7a92b0;--badge-a-bg:#1a1040;--badge-a-t:#9d8cfa;
+  --btn-danger-bg:#3d1010;--uncertain-bg:#2d1e00;--uncertain-br:#7a4a00;
+  --err-bg:#2d0e0e;--overlay-bg:rgba(12,17,24,.88);--r:12px;--r2:8px;
+}
+body.light {
+  --bg:#f4f1ea;--bg2:#fffdf8;--card:#ffffff;--border:#e2d9c8;--border2:#cfc3ae;
+  --text:#1e1a14;--muted:#6b5e4a;--subtle:#a8967e;--gold:#a0720e;--gold2:#c08a1a;
+  --blue:#1a5fa8;--blue2:#1a5fa8;--green:#1a6644;--green2:#1a6644;
+  --red:#b02020;--red2:#b02020;--amber:#a05a10;
+  --badge-n-bg:#d4f0e4;--badge-n-t:#1a6644;--badge-m-bg:#fdefd4;--badge-m-t:#a05a10;
+  --badge-d-bg:#e8e8e8;--badge-d-t:#5a5a5a;--badge-a-bg:#ebe8fc;--badge-a-t:#4a3aaa;
+  --btn-danger-bg:#fde8e8;--uncertain-bg:#fff8e6;--uncertain-br:#e0aa50;
+  --err-bg:#fde8e8;--overlay-bg:rgba(244,241,234,.92);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Lato',sans-serif;overflow:hidden;transition:background .25s,color .25s;}
+h1,h2,h3{font-family:'Lato',sans-serif;}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;}
+#main{flex:1;overflow:hidden;position:relative;}
+.screen{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:20px 16px 100px;display:none;}
+.screen.active{display:block;}
+#tabbar{flex-shrink:0;display:flex;background:var(--card);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom,0);}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;gap:3px;border:none;background:none;color:var(--muted);cursor:pointer;font-family:'Lato',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;transition:color .2s;}
+.tab .ti{font-size:22px;line-height:1;}
+.tab.active{color:var(--gold);}
+#theme-btn{position:absolute;top:20px;right:16px;z-index:10;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:16px;cursor:pointer;line-height:1;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;transition:background .25s,border-color .25s;}
+.card-title{font-size:16px;color:var(--text);margin-bottom:4px;}
+.card-sub{font-size:12px;color:var(--muted);}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:var(--r2);padding:13px 18px;font-family:'Lato',sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%;margin-bottom:10px;transition:opacity .15s,transform .1s;}
+.btn:active{opacity:.8;transform:scale(.98);}
+.btn-gold{background:var(--gold);color:#fff;}
+.btn-outline{background:transparent;color:var(--blue2);border:1px solid var(--blue);}
+.btn-green{background:#1a4a35;color:var(--green2);border:1px solid var(--green);}
+.btn-danger{background:var(--btn-danger-bg);color:var(--red2);border:1px solid var(--red);}
+.btn-sm{padding:8px 14px;font-size:12px;width:auto;margin-bottom:0;}
+.btn-row{display:flex;gap:8px;margin-bottom:12px;}
+.btn-row .btn{flex:1;margin-bottom:0;}
+.input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px;color:var(--text);font-family:'Lato',sans-serif;font-size:14px;outline:none;transition:border-color .2s,background .25s;}
+.input:focus{border-color:var(--gold);}
+.input::placeholder{color:var(--subtle);}
+textarea.input{min-height:140px;resize:vertical;font-family:'Courier New',monospace;font-size:13px;}
+select.input{appearance:none;cursor:pointer;}
+label{display:block;font-size:10px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.field-group{margin-bottom:14px;}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge-n{background:var(--badge-n-bg);color:var(--badge-n-t);}
+.badge-m{background:var(--badge-m-bg);color:var(--badge-m-t);}
+.badge-d{background:var(--badge-d-bg);color:var(--badge-d-t);}
+.badge-a{background:var(--badge-a-bg);color:var(--badge-a-t);}
+.back{display:flex;align-items:center;gap:6px;color:var(--gold);font-size:14px;font-weight:700;border:none;background:none;cursor:pointer;margin-bottom:16px;padding:0;}
+.slabel{font-size:10px;font-weight:700;color:var(--subtle);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fitem label{margin-bottom:2px;}
+.fitem p{font-size:13px;color:var(--text);}
+.search-wrap{position:relative;margin-bottom:12px;}
+.search-wrap .si{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--subtle);font-size:16px;pointer-events:none;}
+.search-wrap .input{padding-left:38px;}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;scrollbar-width:none;}
+.chips::-webkit-scrollbar{display:none;}
+.chip{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;}
+.chip.active{background:var(--gold);color:#fff;border-color:var(--gold);}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:flex;align-items:flex-end;}
+.modal-bg.hidden{display:none;}
+.modal{background:var(--bg2);border-top-left-radius:20px;border-top-right-radius:20px;border-top:1px solid var(--border);width:100%;max-height:92dvh;overflow-y:auto;padding:20px 16px 44px;transition:background .25s;}
+.modal-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 20px;}
+.uncertain-box{background:var(--uncertain-bg);border:1px solid var(--uncertain-br);border-radius:var(--r2);padding:12px;margin-bottom:12px;}
+.uncertain-box p{color:var(--amber);font-size:12px;margin-top:6px;font-family:'Courier New',monospace;}
+.err-box{background:var(--err-bg);border:1px solid var(--red);border-radius:var(--r2);padding:12px;margin-bottom:12px;color:var(--red2);font-size:13px;}
+.rel-link{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+.rel-link:last-child{border-bottom:none;}
+.rel-role{font-size:11px;color:var(--muted);width:70px;flex-shrink:0;}
+.rel-name{color:var(--blue2);font-size:14px;font-weight:700;}
+#tree-svg-wrap{overflow:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;}
+.home-hero{text-align:center;padding:32px 0 28px;}
+.logo-icon{width:64px;height:64px;background:linear-gradient(135deg,var(--gold),#8b6914);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;font-weight:900;color:#fff;}
+.home-card{display:flex;align-items:center;gap:16px;border-radius:16px;padding:18px;margin-bottom:12px;cursor:pointer;border:1px solid transparent;transition:transform .15s,opacity .15s;}
+.home-card:active{transform:scale(.98);opacity:.85;}
+.home-card .hc-emoji{font-size:30px;}
+.home-card .hc-title{font-size:18px;color:#fff;font-weight:700;}
+.home-card .hc-sub{font-size:12px;color:rgba(255,255,255,.55);margin-top:2px;}
+.home-card .hc-arr{margin-left:auto;color:rgba(255,255,255,.3);font-size:20px;}
+.uploading-overlay{position:fixed;inset:0;background:var(--overlay-bg);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+.uploading-overlay.hidden{display:none;}
+.spinner{width:40px;height:40px;border:3px solid var(--border2);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0;}
+.section-title{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;}
+.export-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color .2s;}
+.export-card:hover{border-color:var(--gold);}
+.export-card .ec-icon{font-size:26px;width:40px;text-align:center;}
+.export-card .ec-title{font-size:14px;font-weight:700;color:var(--text);}
+.export-card .ec-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+@media(min-width:768px){.screen{padding:28px 32px 60px;}.fgrid{grid-template-columns:1fr 1fr 1fr;}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}}
+@media(min-width:1024px){.fgrid{grid-template-columns:repeat(4,1fr);}}
+</style>
+</head>
+<body>
+<div class="uploading-overlay hidden" id="upload-overlay">
+  <div class="spinner"></div>
+  <p style="color:var(--muted);font-size:14px">Transcription en cours…</p>
+  <p style="color:var(--subtle);font-size:12px">Claude lit l'acte manuscrit</p>
+</div>
+
+<div id="app">
+  <div id="main">
+    <!-- HOME -->
+    <div class="screen active" id="screen-home">
+      <button id="theme-btn" onclick="toggleTheme()">🌙</button>
+      <div class="home-hero">
+        <div class="logo-icon">G</div>
+        <h1 style="font-size:32px;margin-bottom:8px">Généalogie</h1>
+        <p style="color:var(--muted);font-size:14px;max-width:320px;margin:0 auto">Classement et organisation de vos actes d'état civil anciens</p>
+      </div>
+      <div id="home-cards"></div>
+      <p style="color:var(--subtle);font-size:12px;text-align:center;margin-top:8px">Données démo : famille Houdayer, Laval (Mayenne), 1869–1895</p>
+    </div>
+    <!-- ACTES -->
+    <div class="screen" id="screen-actes">
+      <h1 style="font-size:24px;margin-bottom:16px">Actes</h1>
+      <div class="search-wrap"><span class="si">🔍</span><input class="input" id="act-search" placeholder="Rechercher…" oninput="renderActs()"></div>
+      <div class="chips" id="act-chips"></div>
+      <div class="btn-row">
+        <button class="btn btn-gold" onclick="openAddActModal()">✚ Saisie manuelle</button>
+        <button class="btn btn-outline" onclick="openImportModal()">📷 Transcription IA</button>
+      </div>
+      <div id="act-error" class="err-box hidden"></div>
+      <div id="acts-list"></div>
+    </div>
+    <!-- ACT DETAIL -->
+    <div class="screen" id="screen-act-detail">
+      <button class="back" onclick="showScreen('actes')">← Actes</button>
+      <div id="act-detail-content"></div>
+    </div>
+    <!-- PERSONNES -->
+    <div class="screen" id="screen-personnes">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h1 style="font-size:24px">Personnes</h1>
+        <button class="btn btn-outline btn-sm" onclick="openAddPersonModal()">+ Ajouter</button>
+      </div>
+      <div class="search-wrap"><span class="si">🔍</span><input class="input" id="person-search" placeholder="Rechercher…" oninput="renderPersons()"></div>
+      <div id="persons-list"></div>
+    </div>
+    <!-- PERSON DETAIL -->
+    <div class="screen" id="screen-person-detail">
+      <button class="back" onclick="showScreen('personnes')">← Personnes</button>
+      <div id="person-detail-content"></div>
+    </div>
+    <!-- PERSON EDIT -->
+    <div class="screen" id="screen-person-edit">
+      <button class="back" id="person-edit-back">← Annuler</button>
+      <h2 style="font-size:20px;margin-bottom:20px" id="person-edit-title">Modifier</h2>
+      <div id="person-edit-form"></div>
+    </div>
+    <!-- ARBRE -->
+    <div class="screen" id="screen-arbre">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h1 style="font-size:24px">Arbre</h1>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="openTreeOptions()">🎨 Étiquettes</button>
+          <button class="btn btn-outline btn-sm" onclick="exportTreePDF()">📄 PDF</button>
+        </div>
+      </div>
+      <div class="chips" id="tree-style-chips"></div>
+      <p style="color:var(--muted);font-size:12px;margin-bottom:12px">Faites glisser pour naviguer</p>
+      <div id="tree-svg-wrap"></div>
+    </div>
+    <!-- EXPORT -->
+    <div class="screen" id="screen-export">
+      <button class="back" onclick="showTab('home')">← Accueil</button>
+      <h1 style="font-size:24px;margin-bottom:20px">Exporter</h1>
+      <p class="section-title">Par type de données</p>
+      <div id="export-list"></div>
+    </div>
+  </div>
+
+  <div id="tabbar">
+    <button class="tab active" data-tab="home" onclick="showTab('home')"><span class="ti">🏠</span>Accueil</button>
+    <button class="tab" data-tab="actes" onclick="showTab('actes')"><span class="ti">📄</span>Actes</button>
+    <button class="tab" data-tab="personnes" onclick="showTab('personnes')"><span class="ti">👤</span>Personnes</button>
+    <button class="tab" data-tab="arbre" onclick="showTab('arbre')"><span class="ti">🌳</span>Arbre</button>
+    <button class="tab" data-tab="export" onclick="showTab('export')"><span class="ti">📤</span>Export</button>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-bg hidden" id="modal-add-person">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 style="font-size:20px;margin-bottom:20px">Nouvelle personne</h2>
+    <div class="field-group"><label>Prénom *</label><input class="input" id="np-prenom" placeholder="Prénom"></div>
+    <div class="field-group"><label>Nom *</label><input class="input" id="np-nom" placeholder="Nom"></div>
+    <div class="field-group"><label>Date de naissance (JJ/MM/AAAA)</label><input class="input" id="np-naissance" placeholder="ex: 11/03/1869"></div>
+    <div class="field-group"><label>Lieu de naissance</label><input class="input" id="np-lieuNaissance" placeholder="Ville, Département"></div>
+    <div class="field-group"><label>Profession</label><input class="input" id="np-profession" placeholder="Profession"></div>
+    <hr class="divider">
+    <p class="section-title">Filiation</p>
+    <div class="field-group"><label>Prénom du père</label><input class="input" id="np-prenomPere" placeholder="Prénom du père"></div>
+    <div class="field-group"><label>Nom du père</label><input class="input" id="np-nomPere" placeholder="Nom du père"></div>
+    <div class="field-group"><label>Prénom de la mère</label><input class="input" id="np-prenomMere" placeholder="Prénom de la mère"></div>
+    <div class="field-group"><label>Nom de la mère</label><input class="input" id="np-nomMere" placeholder="Nom de la mère"></div>
+    <button class="btn btn-gold" onclick="addPerson()">Ajouter cette personne</button>
+    <button class="btn btn-outline" onclick="closeModal('modal-add-person')">Annuler</button>
+  </div>
+</div>
+
+<div class="modal-bg hidden" id="modal-add-act">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 style="font-size:20px;margin-bottom:4px">Nouvel acte — Saisie manuelle</h2>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:20px">Remplis les informations directement depuis le document original.</p>
+    <div class="field-group"><label>Type d'acte *</label>
+      <select class="input" id="na-type">
+        <option value="naissance">Naissance</option><option value="mariage">Mariage</option>
+        <option value="décès">Décès</option><option value="autre">Autre</option>
+      </select>
+    </div>
+    <div class="field-group"><label>Titre *</label><input class="input" id="na-title" placeholder="ex : Naissance de Louis Houdayer"></div>
+    <div class="field-group"><label>Date (JJ/MM/AAAA)</label><input class="input" id="na-date" placeholder="ex : 11/03/1869"></div>
+    <div class="field-group"><label>Lieu</label><input class="input" id="na-lieu" placeholder="ex : Laval, Mayenne"></div>
+    <div class="field-group"><label>Famille / Nom principal</label><input class="input" id="na-famille" placeholder="ex : Houdayer"></div>
+    <hr class="divider">
+    <p class="section-title">Personnes mentionnées</p>
+    <div id="na-persons-fields"></div>
+    <div class="field-group"><label>Témoins (séparés par une virgule)</label><input class="input" id="na-temoins" placeholder="Jean Moreau, François Bertrand"></div>
+    <hr class="divider">
+    <div class="field-group"><label>Texte de l'acte (transcription libre)</label><textarea class="input" id="na-transcription" rows="5" placeholder="Recopie ici le texte de l'acte…"></textarea></div>
+    <button class="btn btn-gold" onclick="addAct()">Enregistrer l'acte</button>
+    <button class="btn btn-outline" onclick="closeModal('modal-add-act')">Annuler</button>
+  </div>
+</div>
+
+<div class="modal-bg hidden" id="modal-import">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 style="font-size:20px;margin-bottom:4px">Transcription automatique IA</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Claude analyse la photo de ton acte et en transcrit le contenu automatiquement.</p>
+    <div class="field-group"><label>Clé API Anthropic</label>
+      <input class="input" id="api-key-input" type="password" placeholder="sk-ant-api03-…">
+      <p style="color:var(--subtle);font-size:11px;margin-top:6px">Obtiens-en une gratuitement sur <strong style="color:var(--gold)">console.anthropic.com</strong> · Sauvegardée sur ton appareil</p>
+    </div>
+    <button class="btn btn-gold" onclick="launchImport()">📷 Choisir une photo / PDF</button>
+    <button class="btn btn-outline" onclick="closeModal('modal-import')">Annuler</button>
+    <input type="file" id="file-input" accept="image/*,.pdf" style="display:none" onchange="handleFileSelected(event)">
+  </div>
+</div>
+
+<div class="modal-bg hidden" id="modal-tree-options">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h2 style="font-size:20px;margin-bottom:4px">Style des étiquettes</h2>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:20px">Choisis l'apparence des fiches dans l'arbre.</p>
+    <div id="node-style-options"></div>
+    <button class="btn btn-gold" style="margin-top:8px" onclick="closeModal('modal-tree-options');renderTree()">Appliquer</button>
+    <button class="btn btn-outline" onclick="closeModal('modal-tree-options')">Fermer</button>
+  </div>
+</div>
+
+<script>
+// ─── Theme ─────────────────────────────────────────────────────────────────────
+function applyTheme(light){document.body.classList.toggle('light',light);const b=document.getElementById('theme-btn');if(b)b.textContent=light?'🌙':'☀️';}
+function toggleTheme(){const l=!document.body.classList.contains('light');localStorage.setItem('genealog_theme',l?'light':'dark');applyTheme(l);}
+
+// ─── Demo data ─────────────────────────────────────────────────────────────────
+const DEMO={
+  acts:[
+    {id:'a1',type:'naissance',title:'Naissance de Louis Houdayer',date:'1869-03-11',lieu:'Laval, Mayenne',famille:'Houdayer',tags:['démo'],
+     transcription:"Acte de naissance n°47\n\nL'an mil huit cent soixante-neuf, le douze mars, par devant nous, officier de l'état civil de la commune de Laval, département de la Mayenne, a comparu Pierre HOUDAYER, tisserand, âgé de trente-deux ans, demeurant rue Saint-Nicolas n°14, lequel nous a présenté un enfant du sexe masculin, né le onze mars courant à six heures du matin, de lui déclarant et de Marie-Anne FORTIN son épouse, et auquel il a donné le prénom de Louis.\n\nTémoins : Jean MOREAU, cultivateur, et François BERTRAND, cordonnier.",
+     fields:{nom:'Houdayer',prenom:'Louis',date:'11 mars 1869',lieu:'Laval, Mayenne',
+       pereNom:'Houdayer',perePrenom:'Pierre',pereAge:'32 ans',pereProfession:'tisserand',
+       pere:'Pierre Houdayer, tisserand',
+       mereNom:'Fortin',merePrenom:'Marie-Anne',mereAge:'28 ans',mereProfession:'',
+       mere:'Marie-Anne Fortin',
+       temoins:['Jean Moreau, cultivateur','François Bertrand, cordonnier'],profession:'',age:''},
+     uncertain:['six heures du matin'],personIds:['p1','p2','p3']},
+    {id:'a2',type:'mariage',title:'Mariage Houdayer–Renault',date:'1895-06-24',lieu:'Laval, Mayenne',famille:'Houdayer',tags:['démo'],
+     transcription:"Acte de mariage n°112\n\nL'an mil huit cent quatre-vingt-quinze, le vingt-quatre juin, ont comparu Louis HOUDAYER, tisseur, né le onze mars 1869 à Laval, fils de Pierre Houdayer et Marie-Anne Fortin ; et Marguerite RENAULT, née le trois mai 1872 à Changé, fille de Henri Renault et Jeanne Leroux.\nTémoins : Auguste Houdayer et Victor Renault.",
+     fields:{nom:'Houdayer',prenom:'Louis',date:'24 juin 1895',lieu:'Laval, Mayenne',age:'26 ans',profession:'tisseur',
+       pereNom:'Houdayer',perePrenom:'Pierre',pereAge:'',pereProfession:'tisserand',pere:'Pierre Houdayer',
+       mereNom:'Fortin',merePrenom:'Marie-Anne',mereAge:'',mereProfession:'',mere:'Marie-Anne Fortin',
+       epouseNom:'Renault',epousePrenom:'Marguerite',epouseAge:'23 ans',epouseProfession:'',
+       bpereNom:'Renault',bperePrenom:'Henri',bpereAge:'',bpereProfession:'agriculteur',
+       bmereNom:'Leroux',bmerePrenom:'Jeanne',bmereAge:'',bmereProfession:'',
+       temoins:['Auguste Houdayer','Victor Renault']},
+     uncertain:[],personIds:['p1','p4']},
+    {id:'a3',type:'décès',title:'Décès de Pierre Houdayer',date:'1882-11-06',lieu:'Laval, Mayenne',famille:'Houdayer',tags:['démo'],
+     transcription:"Acte de décès n°203\n\nL'an mil huit cent quatre-vingt-deux, le sept novembre, sont comparus Auguste HOUDAYER et Jean-Baptiste LEROYER, lesquels ont déclaré que Pierre HOUDAYER, tisserand, âgé de quarante-cinq ans, époux de Marie-Anne Fortin, est décédé le six novembre courant en son domicile.",
+     fields:{nom:'Houdayer',prenom:'Pierre',date:'6 novembre 1882',lieu:'Laval, Mayenne',pere:'',mere:'',temoins:['Auguste Houdayer','Jean-Baptiste Leroyer'],profession:'tisserand',age:'45 ans'},
+     uncertain:['trois heures après-midi'],personIds:['p2']},
+  ],
+  persons:[
+    {id:'p1',nom:'Houdayer',prenom:'Louis',naissance:'1869-03-11',lieuNaissance:'Laval, Mayenne',deces:null,lieuDeces:null,profession:'tisseur',actIds:['a1','a2'],parentIds:['p2','p3'],conjointId:'p4',enfantIds:['p5']},
+    {id:'p2',nom:'Houdayer',prenom:'Pierre',naissance:null,lieuNaissance:null,deces:'1882-11-06',lieuDeces:'Laval, Mayenne',profession:'tisserand',actIds:['a1','a3'],parentIds:[],conjointId:'p3',enfantIds:['p1']},
+    {id:'p3',nom:'Fortin',prenom:'Marie-Anne',naissance:null,lieuNaissance:null,deces:null,lieuDeces:null,profession:null,actIds:['a1'],parentIds:[],conjointId:'p2',enfantIds:['p1']},
+    {id:'p4',nom:'Renault',prenom:'Marguerite',naissance:'1872-05-03',lieuNaissance:'Changé, Mayenne',deces:null,lieuDeces:null,profession:null,actIds:['a2'],parentIds:['p6','p7'],conjointId:'p1',enfantIds:['p5']},
+    {id:'p5',nom:'Houdayer',prenom:'Henri',naissance:'1897-02-15',lieuNaissance:'Laval, Mayenne',deces:null,lieuDeces:null,profession:null,actIds:[],parentIds:['p1','p4'],conjointId:null,enfantIds:[]},
+    {id:'p6',nom:'Renault',prenom:'Henri',naissance:null,lieuNaissance:null,deces:null,lieuDeces:null,profession:'agriculteur',actIds:['a2'],parentIds:[],conjointId:'p7',enfantIds:['p4']},
+    {id:'p7',nom:'Leroux',prenom:'Jeanne',naissance:null,lieuNaissance:null,deces:null,lieuDeces:null,profession:null,actIds:['a2'],parentIds:[],conjointId:'p6',enfantIds:['p4']},
+  ]
+};
+
+let DB={acts:[],persons:[]};
+const MONTHS=['jan','fév','mar','avr','mai','jun','jul','aoû','sep','oct','nov','déc'];
+function fmtDate(d){if(!d)return'—';const[y,m,day]=d.split('-');if(!y)return d;return[day,m,y].filter(Boolean).join('/');}
+function toDisplay(d){if(!d)return'';const[y,m,day]=d.split('-');return[day,m,y].filter(Boolean).join('/');}
+function toInternal(d){
+  if(!d)return'';d=d.trim();
+  if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d;
+  const m=d.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if(m)return`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  return d;
+}
+function pLabel(p){return`${p.prenom||''} ${p.nom||''}`.trim();}
+function pParentsLabel(p){
+  const pere=DB.persons.find(x=>x.id===(p.parentIds||[])[0]);
+  const mere=DB.persons.find(x=>x.id===(p.parentIds||[])[1]);
+  const parts=[];
+  if(p.nomPere||p.prenomPere)parts.push(`Père : ${[p.prenomPere,p.nomPere].filter(Boolean).join(' ')}`);
+  else if(pere)parts.push(`Père : ${pLabel(pere)}`);
+  if(p.nomMere||p.prenomMere)parts.push(`Mère : ${[p.prenomMere,p.nomMere].filter(Boolean).join(' ')}`);
+  else if(mere)parts.push(`Mère : ${pLabel(mere)}`);
+  return parts.join(' · ');
+}
+const ACT_INFO={naissance:{cls:'badge-n',label:'Naissance'},mariage:{cls:'badge-m',label:'Mariage'},décès:{cls:'badge-d',label:'Décès'},autre:{cls:'badge-a',label:'Autre'}};
+function badge(type){const i=ACT_INFO[type]||ACT_INFO.autre;return`<span class="badge ${i.cls}">${i.label}</span>`;}
+function e(id){return document.getElementById(id);}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function showScreen(name){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));e('screen-'+name).classList.add('active');e('screen-'+name).scrollTop=0;}
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  if(name==='home'){renderHome();showScreen('home');}
+  else if(name==='actes'){renderActs();showScreen('actes');}
+  else if(name==='personnes'){renderPersons();showScreen('personnes');}
+  else if(name==='arbre'){renderTree();showScreen('arbre');}
+  else if(name==='export'){renderExport();showScreen('export');}
+}
+function closeModal(id){e(id).classList.add('hidden');}
+
+// ─── IndexedDB Storage ─────────────────────────────────────────────────────────
+let idb=null;
+function openIDB(){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open('genealogie',2);
+    req.onupgradeneeded=ev=>{
+      const db=ev.target.result;
+      if(!db.objectStoreNames.contains('data'))db.createObjectStore('data');
+      if(!db.objectStoreNames.contains('images'))db.createObjectStore('images');
+    };
+    req.onsuccess=ev=>{idb=ev.target.result;res(idb);};
+    req.onerror=()=>rej(req.error);
+  });
+}
+function idbPut(store,key,value){
+  return new Promise((res,rej)=>{
+    const tx=idb.transaction(store,'readwrite');
+    const req=tx.objectStore(store).put(value,key);
+    req.onsuccess=()=>res();req.onerror=()=>rej(req.error);
+  });
+}
+function idbGet(store,key){
+  return new Promise((res,rej)=>{
+    const tx=idb.transaction(store,'readonly');
+    const req=tx.objectStore(store).get(key);
+    req.onsuccess=()=>res(req.result||null);req.onerror=()=>rej(req.error);
+  });
+}
+
+async function save(){
+  try{
+    const slim={acts:DB.acts.map(a=>{const{imageData,...r}=a;return r;}),persons:DB.persons};
+    await idbPut('data','genealog_db',slim);
+    // fallback localStorage for quick reload
+    try{localStorage.setItem('genealog_v2',JSON.stringify(slim));}catch(e){}
+  }catch(e){console.warn('save error',e);}
+}
+async function saveImage(actId,dataUrl){
+  try{await idbPut('images',actId,dataUrl);}catch(e){}
+}
+async function loadImage(actId){
+  try{return await idbGet('images',actId);}catch(e){return null;}
+}
+async function load(){
+  try{
+    const saved=await idbGet('data','genealog_db');
+    if(saved){DB=saved;return;}
+  }catch(e){}
+  // fallback to localStorage
+  try{const r=localStorage.getItem('genealog_v2');if(r){DB=JSON.parse(r);return;}}catch(e){}
+  DB=JSON.parse(JSON.stringify(DEMO));
+  await save();
+}
+
+// ─── Home ──────────────────────────────────────────────────────────────────────
+function renderHome(){
+  const cards=[
+    {tab:'actes',emoji:'📄',title:'Actes',sub:`${DB.acts.length} acte(s) enregistré(s)`,bg:'linear-gradient(135deg,#1a1a4e,#0e0e2c)',border:'#2a2a6e'},
+    {tab:'personnes',emoji:'👤',title:'Personnes',sub:`${DB.persons.length} personne(s) identifiée(s)`,bg:'linear-gradient(135deg,#0e3528,#071e16)',border:'#1a5a3a'},
+    {tab:'arbre',emoji:'🌳',title:'Arbre généalogique',sub:'Visualisation & export PDF',bg:'linear-gradient(135deg,#3d2200,#1e1100)',border:'#7a4a00'},
+    {tab:'export',emoji:'📤',title:'Exporter',sub:'PDF, CSV, famille, période…',bg:'linear-gradient(135deg,#1a2a3e,#0e1824)',border:'#2a4060'},
+  ];
+  e('home-cards').innerHTML=cards.map(c=>`<div class="home-card" style="background:${c.bg};border-color:${c.border}" onclick="showTab('${c.tab}')"><span class="hc-emoji">${c.emoji}</span><div><div class="hc-title">${c.title}</div><div class="hc-sub">${c.sub}</div></div><span class="hc-arr">›</span></div>`).join('');
+}
+
+// ─── Acts ──────────────────────────────────────────────────────────────────────
+let actFilter='tous';
+function renderActs(){
+  const q=(e('act-search')||{value:''}).value.toLowerCase();
+  const chips=e('act-chips');
+  if(chips)chips.innerHTML=['tous','naissance','mariage','décès','autre'].map(t=>`<div class="chip ${actFilter===t?'active':''}" onclick="setActFilter('${t}')">${t==='tous'?'Tous':ACT_INFO[t]?.label||t}</div>`).join('');
+  const list=DB.acts.filter(a=>{
+    const ms=!q||a.title?.toLowerCase().includes(q)||a.transcription?.toLowerCase().includes(q)||a.lieu?.toLowerCase().includes(q);
+    const mt=actFilter==='tous'||a.type===actFilter;
+    return ms&&mt;
+  });
+  const el=e('acts-list');if(!el)return;
+  el.innerHTML=list.length===0?`<p style="color:var(--muted);text-align:center;margin-top:40px">Aucun acte trouvé</p>`:list.map(a=>`
+    <div class="card" onclick="openActDetail('${a.id}')" style="cursor:pointer">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px">
+        <div style="flex:1"><div class="card-title" style="font-size:15px">${esc(a.title)}</div><div class="card-sub">${fmtDate(a.date)} · ${esc(a.lieu||'—')}</div></div>
+        ${badge(a.type)}
+      </div>
+      ${a.uncertain?.length?`<p style="color:var(--amber);font-size:12px;margin-top:4px">⚠ ${a.uncertain.length} passage(s) incertain(s)</p>`:''}
+      ${a.tags?.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${a.tags.map(t=>`<span style="background:var(--badge-a-bg);color:var(--badge-a-t);font-size:11px;padding:2px 8px;border-radius:20px">${esc(t)}</span>`).join('')}</div>`:''}
+    </div>`).join('');
+}
+function setActFilter(t){actFilter=t;renderActs();}
+
+async function openActDetail(id){
+  const a=DB.acts.find(x=>x.id===id);if(!a)return;
+  const f=a.fields||{};
+  e('act-detail-content').innerHTML=`
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:4px">
+      <div style="flex:1">
+        <input class="input" id="ad-title" value="${esc(a.title)}" style="font-size:17px;font-weight:700;padding:6px 10px;margin-bottom:6px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="input" id="ad-type" style="flex:1;padding:6px 10px">
+            ${['naissance','mariage','décès','autre'].map(t=>`<option value="${t}" ${a.type===t?'selected':''}>${ACT_INFO[t].label}</option>`).join('')}
+          </select>
+          <span id="ad-badge">${badge(a.type)}</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div><label>Date (JJ/MM/AAAA)</label><input class="input" id="ad-date" value="${esc(toDisplay(a.date||''))}" placeholder="11/03/1869"></div>
+      <div><label>Lieu</label><input class="input" id="ad-lieu" value="${esc(a.lieu||'')}" placeholder="Laval, Mayenne"></div>
+      <div><label>Famille</label><input class="input" id="ad-famille" value="${esc(a.famille||'')}" placeholder="Houdayer"></div>
+    </div>
+    ${actDetailPersonsHTML(a.type, f)}
+    ${a.uncertain?.length?`<div class="uncertain-box"><div style="color:var(--amber);font-size:12px;font-weight:700">⚠ PASSAGES INCERTAINS</div>${a.uncertain.map(u=>`<p>«${esc(u)}»</p>`).join('')}</div>`:''}
+    <div class="card">
+      <div class="slabel">Transcription</div>
+      <p style="color:var(--muted);font-size:11px;margin-bottom:8px">Modifie le texte puis clique sur Enregistrer pour mettre à jour tous les champs.</p>
+      <textarea class="input" id="ad-transcription" rows="10">${esc(a.transcription||'')}</textarea>
+      <button class="btn btn-outline" style="margin-top:8px" onclick="reExtractFromTranscription('${a.id}')">🔄 Ré-extraire les champs depuis la transcription</button>
+      <button class="btn btn-gold" style="margin-top:6px" onclick="saveActDetail('${a.id}')">✓ Enregistrer toutes les modifications</button>
+    </div>
+    <div class="card" id="act-photo-card">
+      <div class="slabel">Document original</div>
+      <div id="act-photo-wrap" style="margin-top:8px"></div>
+      <label class="btn btn-outline btn-sm" style="cursor:pointer;margin-top:8px;display:inline-flex">
+        📎 Joindre / remplacer le document
+        <input type="file" accept="image/*,.pdf,application/pdf" style="display:none" onchange="attachPhotoToAct('${a.id}',this)">
+      </label>
+    </div>
+    <button class="btn btn-danger" onclick="deleteAct('${a.id}')">🗑 Supprimer cet acte</button>`;
+
+  // Load and render the stored document AFTER innerHTML
+  renderActDocument(id, document.getElementById('act-photo-wrap'));
+
+  // Live badge update on type change
+  e('ad-type').addEventListener('change',()=>{ e('ad-badge').innerHTML=badge(e('ad-type').value); });
+  showScreen('act-detail');
+}
+
+function actDetailPersonsHTML(type, f){
+  const v=k=>esc(f[k]||'');
+  if(type==='naissance'){
+    return`<div class="card">
+      <div class="slabel">Personnes mentionnées</div>
+      <p style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Enfant</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div><label>Prénom</label><input class="input" id="ad-prenom" value="${v('prenom')}" placeholder="Prénom"></div>
+        <div><label>Âge</label><input class="input" id="ad-age" value="${v('age')}" placeholder="ex: quelques heures"></div>
+        <div style="grid-column:1/-1"><label>Profession</label><input class="input" id="ad-profession" value="${v('profession')}" placeholder="—"></div>
+      </div>
+      <p style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Père</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div><label>Nom</label><input class="input" id="ad-pere-nom" value="${v('pereNom')}" placeholder="Nom du père"></div>
+        <div><label>Prénom</label><input class="input" id="ad-pere-prenom" value="${v('perePrenom')}" placeholder="Prénom du père"></div>
+        <div><label>Âge</label><input class="input" id="ad-pere-age" value="${v('pereAge')}" placeholder="ex: 32 ans"></div>
+        <div><label>Profession</label><input class="input" id="ad-pere-profession" value="${v('pereProfession')}" placeholder="ex: tisserand"></div>
+      </div>
+      <p style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Mère</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div><label>Nom</label><input class="input" id="ad-mere-nom" value="${v('mereNom')}" placeholder="Nom de la mère"></div>
+        <div><label>Prénom</label><input class="input" id="ad-mere-prenom" value="${v('merePrenom')}" placeholder="Prénom de la mère"></div>
+        <div><label>Âge</label><input class="input" id="ad-mere-age" value="${v('mereAge')}" placeholder="ex: 28 ans"></div>
+        <div><label>Profession</label><input class="input" id="ad-mere-profession" value="${v('mereProfession')}" placeholder="ex: ménagère"></div>
+      </div>
+      <div><label>Témoins (séparés par virgule)</label><input class="input" id="ad-temoins" value="${esc((f.temoins||[]).join(', '))}" placeholder="Jean Moreau, François Bertrand"></div>
+    </div>`;
+  } else if(type==='mariage'){
+    return`<div class="card">
+      <div class="slabel">Personnes mentionnées</div>
+      <p style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Époux</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div><label>Nom</label><input class="input" id="ad-nom" value="${v('nom')}" placeholder="Nom de l'époux"></div>
+        <div><label>Prénom</label><input class="input" id="ad-prenom" value="${v('prenom')}" placeholder="Prénom de l'époux"></div>
+        <div><label>Âge</label><input class="input" id="ad-age" value="${v('age')}" placeholder="ex: 26 ans"></div>
+        <div><label>Profession</label><input class="input" id="ad-profession" value="${v('profession')}" placeholder="ex: tisseur"></div>
+      </div>
+      <p style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Parents de l'époux</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div><label>Nom du père</label><input class="input" id="ad-pere-nom" value="${v('pereNom')}" placeholder="Nom"></div>
+        <div><label>Prénom du père</label><input class="input" id="ad-pere-prenom" value="${v('perePrenom')}" placeholder="Prénom"></div>
+        <div><label>Âge du père</label><input class="input" id="ad-pere-age" value="${v('pereAge')}" placeholder="ex: 58 ans"></div>
+        <div><label>Profession du père</label><input class="input" id="ad-pere-profession" value="${v('pereProfession')}" placeholder="ex: cultivateur"></div>
+        <div><label>Nom de la mère</label><input class="input" id="ad-mere-nom" value="${v('mereNom')}" placeholder="Nom"></div>
+        <div><label>Prénom de la mère</label><input class="input" id="ad-mere-prenom" value="${v('merePrenom')}" placeholder="Prénom"></div>
+        <div><label>Âge de la mère</label><input class="input" id="ad-mere-age" value="${v('mereAge')}" placeholder="ex: 52 ans"></div>
+        <div><label>Profession de la mère</label><input class="input" id="ad-mere-profession" value="${v('mereProfession')}" placeholder="ex: ménagère"></div>
+      </div>
+      <p style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Épouse</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div><label>Nom</label><input class="input" id="ad-epouse-nom" value="${v('epouseNom')}" placeholder="Nom de l'épouse"></div>
+        <div><label>Prénom</label><input class="input" id="ad-epouse-prenom" value="${v('epousePrenom')}" placeholder="Prénom de l'épouse"></div>
+        <div><label>Âge</label><input class="input" id="ad-epouse-age" value="${v('epouseAge')}" placeholder="ex: 23 ans"></div>
+        <div><label>Profession</label><input class="input" id="ad-epouse-profession" value="${v('epouseProfession')}" placeholder="ex: ménagère"></div>
+      </div>
+      <p style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Parents de l'épouse</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div><label>Nom du père</label><input class="input" id="ad-bpere-nom" value="${v('bpereNom')}" placeholder="Nom"></div>
+        <div><label>Prénom du père</label><input class="input" id="ad-bpere-prenom" value="${v('bperePrenom')}" placeholder="Prénom"></div>
+        <div><label>Âge du père</label><input class="input" id="ad-bpere-age" value="${v('bpereAge')}" placeholder="ex: 55 ans"></div>
+        <div><label>Profession du père</label><input class="input" id="ad-bpere-profession" value="${v('bpereProfession')}" placeholder="ex: agriculteur"></div>
+        <div><label>Nom de la mère</label><input class="input" id="ad-bmere-nom" value="${v('bmereNom')}" placeholder="Nom"></div>
+        <div><label>Prénom de la mère</label><input class="input" id="ad-bmere-prenom" value="${v('bmerePrenom')}" placeholder="Prénom"></div>
+        <div><label>Âge de la mère</label><input class="input" id="ad-bmere-age" value="${v('bmereAge')}" placeholder="ex: 50 ans"></div>
+        <div><label>Profession de la mère</label><input class="input" id="ad-bmere-profession" value="${v('bmereProfession')}" placeholder="ex: ménagère"></div>
+      </div>
+      <div><label>Témoins (séparés par virgule)</label><input class="input" id="ad-temoins" value="${esc((f.temoins||[]).join(', '))}" placeholder="Auguste Houdayer, Victor Renault"></div>
+    </div>`;
+  } else {
+    return`<div class="card">
+      <div class="slabel">Personnes mentionnées</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label>Nom</label><input class="input" id="ad-nom" value="${v('nom')}" placeholder="Nom"></div>
+        <div><label>Prénom</label><input class="input" id="ad-prenom" value="${v('prenom')}" placeholder="Prénom"></div>
+        <div><label>Âge</label><input class="input" id="ad-age" value="${v('age')}" placeholder="Âge"></div>
+        <div><label>Profession</label><input class="input" id="ad-profession" value="${v('profession')}" placeholder="Profession"></div>
+        <div><label>Nom du père</label><input class="input" id="ad-pere-nom" value="${v('pereNom')}" placeholder="Nom du père"></div>
+        <div><label>Prénom du père</label><input class="input" id="ad-pere-prenom" value="${v('perePrenom')}" placeholder="Prénom du père"></div>
+        <div><label>Nom de la mère</label><input class="input" id="ad-mere-nom" value="${v('mereNom')}" placeholder="Nom de la mère"></div>
+        <div><label>Prénom de la mère</label><input class="input" id="ad-mere-prenom" value="${v('merePrenom')}" placeholder="Prénom de la mère"></div>
+      </div>
+      <div style="margin-top:8px"><label>Témoins (séparés par virgule)</label><input class="input" id="ad-temoins" value="${esc((f.temoins||[]).join(', '))}" placeholder="Jean Moreau, François Bertrand"></div>
+    </div>`;
+  }
+}
+async function saveActDetail(id){
+  const temoinsRaw=(e('ad-temoins')?.value||'').trim();
+  const temoins=temoinsRaw?temoinsRaw.split(',').map(t=>t.trim()).filter(Boolean):[];
+  const gv=eid=>(e(eid)?.value?.trim()||'');
+  const type=e('ad-type').value;
+  let fields={temoins};
+  if(type==='naissance'){
+    fields={...fields,
+      nom:gv('ad-famille'),prenom:gv('ad-prenom'),age:gv('ad-age'),profession:gv('ad-profession'),
+      pereNom:gv('ad-pere-nom'),perePrenom:gv('ad-pere-prenom'),pereAge:gv('ad-pere-age'),pereProfession:gv('ad-pere-profession'),
+      pere:`${gv('ad-pere-prenom')} ${gv('ad-pere-nom')}`.trim(),
+      mereNom:gv('ad-mere-nom'),merePrenom:gv('ad-mere-prenom'),mereAge:gv('ad-mere-age'),mereProfession:gv('ad-mere-profession'),
+      mere:`${gv('ad-mere-prenom')} ${gv('ad-mere-nom')}`.trim(),
+    };
+  } else if(type==='mariage'){
+    fields={...fields,
+      nom:gv('ad-nom'),prenom:gv('ad-prenom'),age:gv('ad-age'),profession:gv('ad-profession'),
+      epouseNom:gv('ad-epouse-nom'),epousePrenom:gv('ad-epouse-prenom'),epouseAge:gv('ad-epouse-age'),epouseProfession:gv('ad-epouse-profession'),
+      pereNom:gv('ad-pere-nom'),perePrenom:gv('ad-pere-prenom'),pereAge:gv('ad-pere-age'),pereProfession:gv('ad-pere-profession'),
+      pere:`${gv('ad-pere-prenom')} ${gv('ad-pere-nom')}`.trim(),
+      mereNom:gv('ad-mere-nom'),merePrenom:gv('ad-mere-prenom'),mereAge:gv('ad-mere-age'),mereProfession:gv('ad-mere-profession'),
+      mere:`${gv('ad-mere-prenom')} ${gv('ad-mere-nom')}`.trim(),
+      bpereNom:gv('ad-bpere-nom'),bperePrenom:gv('ad-bpere-prenom'),bpereAge:gv('ad-bpere-age'),bpereProfession:gv('ad-bpere-profession'),
+      bmereNom:gv('ad-bmere-nom'),bmerePrenom:gv('ad-bmere-prenom'),bmereAge:gv('ad-bmere-age'),bmereProfession:gv('ad-bmere-profession'),
+    };
+  } else {
+    fields={...fields,
+      nom:gv('ad-nom'),prenom:gv('ad-prenom'),age:gv('ad-age'),profession:gv('ad-profession'),
+      pereNom:gv('ad-pere-nom'),perePrenom:gv('ad-pere-prenom'),
+      pere:`${gv('ad-pere-prenom')} ${gv('ad-pere-nom')}`.trim(),
+      mereNom:gv('ad-mere-nom'),merePrenom:gv('ad-mere-prenom'),
+      mere:`${gv('ad-mere-prenom')} ${gv('ad-mere-nom')}`.trim(),
+    };
+  }
+  const updated={
+    ...DB.acts.find(a=>a.id===id),
+    title:gv('ad-title'),type,
+    date:toInternal(gv('ad-date')),lieu:gv('ad-lieu'),
+    famille:gv('ad-famille'),
+    transcription:e('ad-transcription').value,fields,
+  };
+  DB.acts=DB.acts.map(a=>a.id===id?updated:a);
+  upsertPersonFromAct(updated);
+  await save();renderActs();
+  const btn=document.querySelector(`[onclick="saveActDetail('${id}')"]`);
+  if(btn){btn.textContent='✓ Enregistré !';setTimeout(()=>btn.textContent='✓ Enregistrer toutes les modifications',2000);}
+}
+
+async function reExtractFromTranscription(id){
+  const text=e('ad-transcription').value.trim();
+  if(!text){alert('La transcription est vide.');return;}
+  const k=localStorage.getItem('genealog_apikey');
+  if(!k){alert('Clé API manquante. Utilise le bouton Transcription IA pour la saisir.');return;}
+  const btn=document.querySelector(`[onclick="reExtractFromTranscription('${id}')"]`);
+  if(btn){btn.textContent='⏳ Extraction…';btn.disabled=true;}
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-5',max_tokens:600,
+        system:`Extrait les champs d'un acte d'état civil depuis un texte. Retourne UNIQUEMENT du JSON valide sans markdown:
+{"type":"naissance|mariage|décès|autre","fields":{"nom":"","prenom":"","date":"","lieu":"","pere":"","mere":"","temoins":[],"profession":"","age":""},"uncertain":[]}`,
+        messages:[{role:'user',content:text}]
+      })
+    });
+    const data=await res.json();
+    const raw=data.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+    const result=JSON.parse(raw);
+    const f=result.fields||{};
+    const sv=(id,val)=>{if(val&&e(id))e(id).value=val;};
+    sv('ad-nom',f.nom);sv('ad-prenom',f.prenom);
+    if(f.date)sv('ad-date',f.date);
+    if(f.lieu){sv('ad-lieu',f.lieu);if(f.nom)sv('ad-famille',f.nom);}
+    // Handle split parent fields
+    if(f.pere){const parts=f.pere.split(/,|–|-/);sv('ad-pere-prenom',(parts[0]||'').trim());sv('ad-pere-nom',(parts[1]||'').trim().split(' ').slice(-1)[0]||'');}
+    if(f.mere){const parts=f.mere.split(/,|–|-/);sv('ad-mere-prenom',(parts[0]||'').trim());sv('ad-mere-nom',(parts[1]||'').trim().split(' ').slice(-1)[0]||'');}
+    if(f.temoins?.length)sv('ad-temoins',f.temoins.join(', '));
+    sv('ad-profession',f.profession);sv('ad-age',f.age);
+    if(result.type){e('ad-type').value=result.type;}
+    e('ad-badge').innerHTML=badge(result.type||'autre');
+  }catch(err){alert('Erreur d\'extraction : '+err.message);}
+  finally{if(btn){btn.textContent='🔄 Ré-extraire les champs depuis la transcription';btn.disabled=false;}}
+}
+
+// Create or update the person linked to an act
+function upsertPersonFromAct(act){
+  const f=act.fields||{};
+  if(!f.nom&&!f.prenom)return;
+  // Find existing person with same nom+prenom
+  let p=DB.persons.find(x=>x.nom===f.nom&&x.prenom===f.prenom);
+  if(!p){
+    p={id:`p-${Date.now()}`,nom:f.nom||'',prenom:f.prenom||'',naissance:null,lieuNaissance:null,deces:null,lieuDeces:null,profession:f.profession||null,actIds:[],parentIds:[],enfantIds:[],conjointId:null};
+    DB.persons.push(p);
+  }
+  // Update profession if missing
+  if(f.profession&&!p.profession)p.profession=f.profession;
+  // Link act
+  if(!p.actIds.includes(act.id))p.actIds.push(act.id);
+  // Link act to person
+  if(!act.personIds.includes(p.id))act.personIds.push(p.id);
+  // Try to extract naissance from date if type=naissance
+  if(act.type==='naissance'&&f.date&&!p.naissance){
+    // parse "11 mars 1869" → "1869-03-11"
+    const months={jan:'01',fév:'02',mar:'03',avr:'04',mai:'05',jun:'06',jul:'07',aoû:'08',sep:'09',oct:'10',nov:'11','déc':'12'};
+    const m=f.date.match(/(\d+)\s+(\w+)\s+(\d{4})/);
+    if(m){const mo=months[m[2].toLowerCase().slice(0,3)];if(mo)p.naissance=`${m[3]}-${mo}-${m[1].padStart(2,'0')}`;}
+    if(f.lieu)p.lieuNaissance=f.lieu;
+  }
+  if(act.type==='décès'&&f.date&&!p.deces){
+    const months={jan:'01',fév:'02',mar:'03',avr:'04',mai:'05',jun:'06',jul:'07',aoû:'08',sep:'09',oct:'10',nov:'11','déc':'12'};
+    const m=f.date.match(/(\d+)\s+(\w+)\s+(\d{4})/);
+    if(m){const mo=months[m[2].toLowerCase().slice(0,3)];if(mo)p.deces=`${m[3]}-${mo}-${m[1].padStart(2,'0')}`;}
+  }
+  DB.persons=DB.persons.map(x=>x.id===p.id?p:x);
+}
+async function renderActDocument(id, wrap){
+  if(!wrap)return;
+  const stored=await loadImage(id);
+  if(!stored){
+    wrap.innerHTML=`<p style="color:var(--subtle);font-size:12px">Aucun document joint.</p>`;
+    return;
+  }
+  wrap.innerHTML='';
+  if(stored.startsWith('data:application/pdf')||stored.startsWith('data:application/octet')||stored.includes(';base64,')&&stored.startsWith('data:application/pdf')){
+    // PDF: use object tag (works in all browsers including Safari)
+    const obj=document.createElement('object');
+    obj.type='application/pdf';
+    obj.data=stored;
+    obj.style.cssText='width:100%;height:520px;border-radius:8px;border:1px solid var(--border);display:block';
+    // Fallback link if object doesn't render
+    const fallback=document.createElement('p');
+    fallback.style.cssText='color:var(--muted);font-size:12px;padding:8px 0';
+    fallback.innerHTML='Le PDF ne s\'affiche pas dans ce navigateur. <a id="pdf-dl-link" style="color:var(--blue2);font-weight:700">Télécharger</a>';
+    obj.appendChild(fallback);
+    wrap.appendChild(obj);
+    // Also add a download link outside
+    const dl=document.createElement('a');
+    dl.href=stored;dl.download=`acte_${id}.pdf`;
+    dl.className='btn btn-outline btn-sm';dl.style.cssText='margin-top:8px;display:inline-flex';
+    dl.textContent='⬇ Télécharger le PDF';
+    wrap.appendChild(dl);
+  } else {
+    // Image
+    const img=document.createElement('img');
+    img.alt='Document original';
+    img.style.cssText='width:100%;border-radius:8px;border:1px solid var(--border);display:block';
+    img.src=stored;
+    wrap.appendChild(img);
+  }
+}
+
+async function attachPhotoToAct(id, input){
+  const file=input.files[0];if(!file)return;
+  const isPDF=file.type==='application/pdf';
+  const reader=new FileReader();
+  reader.onload=async()=>{
+    const dataUrl=reader.result;
+    await saveImage(id,dataUrl);
+    const wrap=document.getElementById('act-photo-wrap');
+    await renderActDocument(id,wrap);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function deleteAct(id){
+  if(!confirm('Supprimer cet acte ?'))return;
+  DB.acts=DB.acts.filter(a=>a.id!==id);await save();showTab('actes');
+}
+
+// ─── Manual add act ────────────────────────────────────────────────────────────
+function naPersonsHTML(type){
+  if(type==='naissance'){
+    return`
+    <p style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Enfant</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div><label>Prénom</label><input class="input" id="na-prenom" placeholder="Prénom"></div>
+      <div><label>Âge</label><input class="input" id="na-age" placeholder="ex: quelques heures"></div>
+      <div style="grid-column:1/-1"><label>Profession (si applicable)</label><input class="input" id="na-profession" placeholder="—"></div>
+    </div>
+    <p style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Père</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div><label>Nom</label><input class="input" id="na-pere-nom" placeholder="Nom du père"></div>
+      <div><label>Prénom</label><input class="input" id="na-pere-prenom" placeholder="Prénom du père"></div>
+      <div><label>Âge</label><input class="input" id="na-pere-age" placeholder="ex: 32 ans"></div>
+      <div><label>Profession</label><input class="input" id="na-pere-profession" placeholder="ex: tisserand"></div>
+    </div>
+    <p style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Mère</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div><label>Nom</label><input class="input" id="na-mere-nom" placeholder="Nom de la mère"></div>
+      <div><label>Prénom</label><input class="input" id="na-mere-prenom" placeholder="Prénom de la mère"></div>
+      <div><label>Âge</label><input class="input" id="na-mere-age" placeholder="ex: 28 ans"></div>
+      <div><label>Profession</label><input class="input" id="na-mere-profession" placeholder="ex: ménagère"></div>
+    </div>`;
+  } else if(type==='mariage'){
+    return`
+    <p style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Époux</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div><label>Nom</label><input class="input" id="na-epoux-nom" placeholder="Nom de l'époux"></div>
+      <div><label>Prénom</label><input class="input" id="na-prenom" placeholder="Prénom de l'époux"></div>
+      <div><label>Âge</label><input class="input" id="na-age" placeholder="ex: 26 ans"></div>
+      <div><label>Profession</label><input class="input" id="na-profession" placeholder="ex: tisseur"></div>
+    </div>
+    <p style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Parents de l'époux</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div><label>Nom du père</label><input class="input" id="na-pere-nom" placeholder="Nom"></div>
+      <div><label>Prénom du père</label><input class="input" id="na-pere-prenom" placeholder="Prénom"></div>
+      <div><label>Âge du père</label><input class="input" id="na-pere-age" placeholder="ex: 58 ans"></div>
+      <div><label>Profession du père</label><input class="input" id="na-pere-profession" placeholder="ex: cultivateur"></div>
+      <div><label>Nom de la mère</label><input class="input" id="na-mere-nom" placeholder="Nom"></div>
+      <div><label>Prénom de la mère</label><input class="input" id="na-mere-prenom" placeholder="Prénom"></div>
+      <div><label>Âge de la mère</label><input class="input" id="na-mere-age" placeholder="ex: 52 ans"></div>
+      <div><label>Profession de la mère</label><input class="input" id="na-mere-profession" placeholder="ex: ménagère"></div>
+    </div>
+    <p style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Épouse</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div><label>Nom</label><input class="input" id="na-epouse-nom" placeholder="Nom de l'épouse"></div>
+      <div><label>Prénom</label><input class="input" id="na-epouse-prenom" placeholder="Prénom de l'épouse"></div>
+      <div><label>Âge</label><input class="input" id="na-epouse-age" placeholder="ex: 23 ans"></div>
+      <div><label>Profession</label><input class="input" id="na-epouse-profession" placeholder="ex: ménagère"></div>
+    </div>
+    <p style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Parents de l'épouse</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div><label>Nom du père</label><input class="input" id="na-bpere-nom" placeholder="Nom"></div>
+      <div><label>Prénom du père</label><input class="input" id="na-bpere-prenom" placeholder="Prénom"></div>
+      <div><label>Âge du père</label><input class="input" id="na-bpere-age" placeholder="ex: 55 ans"></div>
+      <div><label>Profession du père</label><input class="input" id="na-bpere-profession" placeholder="ex: agriculteur"></div>
+      <div><label>Nom de la mère</label><input class="input" id="na-bmere-nom" placeholder="Nom"></div>
+      <div><label>Prénom de la mère</label><input class="input" id="na-bmere-prenom" placeholder="Prénom"></div>
+      <div><label>Âge de la mère</label><input class="input" id="na-bmere-age" placeholder="ex: 50 ans"></div>
+      <div><label>Profession de la mère</label><input class="input" id="na-bmere-profession" placeholder="ex: ménagère"></div>
+    </div>`;
+  } else {
+    return`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div><label>Nom</label><input class="input" id="na-nom" placeholder="Nom"></div>
+      <div><label>Prénom</label><input class="input" id="na-prenom" placeholder="Prénom"></div>
+      <div><label>Âge</label><input class="input" id="na-age" placeholder="ex: 45 ans"></div>
+      <div><label>Profession</label><input class="input" id="na-profession" placeholder="Profession"></div>
+      <div><label>Nom du père</label><input class="input" id="na-pere-nom" placeholder="Nom du père"></div>
+      <div><label>Prénom du père</label><input class="input" id="na-pere-prenom" placeholder="Prénom du père"></div>
+      <div><label>Nom de la mère</label><input class="input" id="na-mere-nom" placeholder="Nom de la mère"></div>
+      <div><label>Prénom de la mère</label><input class="input" id="na-mere-prenom" placeholder="Prénom de la mère"></div>
+    </div>`;
+  }
+}
+function openAddActModal(){
+  ['na-title','na-date','na-lieu','na-famille','na-temoins','na-transcription'].forEach(id=>{const el=e(id);if(el)el.value='';});
+  e('na-type').value='naissance';
+  e('na-persons-fields').innerHTML=naPersonsHTML('naissance');
+  e('na-type').onchange=()=>{e('na-persons-fields').innerHTML=naPersonsHTML(e('na-type').value);};
+  e('modal-add-act').classList.remove('hidden');
+}
+async function addAct(){
+  const title=e('na-title').value.trim();
+  if(!title){alert('Le titre est obligatoire.');return;}
+  const temoins=e('na-temoins').value.trim()?e('na-temoins').value.split(',').map(t=>t.trim()).filter(Boolean):[];
+  const type=e('na-type').value;
+  let fields={temoins};
+  const gv=id=>(e(id)?.value?.trim()||'');
+  if(type==='naissance'){
+    fields={...fields,
+      nom:gv('na-famille'),prenom:gv('na-prenom'),age:gv('na-age'),profession:gv('na-profession'),
+      pere:`${gv('na-pere-prenom')} ${gv('na-pere-nom')}`.trim(),pereNom:gv('na-pere-nom'),perePrenom:gv('na-pere-prenom'),pereAge:gv('na-pere-age'),pereProfession:gv('na-pere-profession'),
+      mere:`${gv('na-mere-prenom')} ${gv('na-mere-nom')}`.trim(),mereNom:gv('na-mere-nom'),merePrenom:gv('na-mere-prenom'),mereAge:gv('na-mere-age'),mereProfession:gv('na-mere-profession'),
+    };
+  } else if(type==='mariage'){
+    fields={...fields,
+      nom:gv('na-epoux-nom'),prenom:gv('na-prenom'),age:gv('na-age'),profession:gv('na-profession'),
+      epouseNom:gv('na-epouse-nom'),epousePrenom:gv('na-epouse-prenom'),epouseAge:gv('na-epouse-age'),epouseProfession:gv('na-epouse-profession'),
+      pere:`${gv('na-pere-prenom')} ${gv('na-pere-nom')}`.trim(),pereNom:gv('na-pere-nom'),perePrenom:gv('na-pere-prenom'),pereAge:gv('na-pere-age'),pereProfession:gv('na-pere-profession'),
+      mere:`${gv('na-mere-prenom')} ${gv('na-mere-nom')}`.trim(),mereNom:gv('na-mere-nom'),merePrenom:gv('na-mere-prenom'),mereAge:gv('na-mere-age'),mereProfession:gv('na-mere-profession'),
+      bpereNom:gv('na-bpere-nom'),bperePrenom:gv('na-bpere-prenom'),bpereAge:gv('na-bpere-age'),bpereProfession:gv('na-bpere-profession'),
+      bmereNom:gv('na-bmere-nom'),bmerePrenom:gv('na-bmere-prenom'),bmereAge:gv('na-bmere-age'),bmereProfession:gv('na-bmere-profession'),
+    };
+  } else {
+    fields={...fields,
+      nom:gv('na-nom'),prenom:gv('na-prenom'),age:gv('na-age'),profession:gv('na-profession'),
+      pereNom:gv('na-pere-nom'),perePrenom:gv('na-pere-prenom'),
+      mereNom:gv('na-mere-nom'),merePrenom:gv('na-mere-prenom'),
+      pere:`${gv('na-pere-prenom')} ${gv('na-pere-nom')}`.trim(),
+      mere:`${gv('na-mere-prenom')} ${gv('na-mere-nom')}`.trim(),
+    };
+  }
+  const newAct={
+    id:`act-${Date.now()}`,type,title,
+    date:toInternal(gv('na-date')),lieu:gv('na-lieu'),
+    famille:gv('na-famille'),tags:[],
+    transcription:gv('na-transcription'),
+    fields,uncertain:[],personIds:[],
+  };
+  DB.acts.push(newAct);
+  upsertPersonFromAct(newAct);
+  await save();closeModal('modal-add-act');renderActs();openActDetail(newAct.id);
+}
+
+// ─── IA transcription ──────────────────────────────────────────────────────────
+function openImportModal(){
+  const stored=localStorage.getItem('genealog_apikey')||'';
+  e('api-key-input').value=stored;
+  e('modal-import').classList.remove('hidden');
+}
+function launchImport(){
+  const k=e('api-key-input').value.trim();
+  if(!k){alert('Entre ta clé API Anthropic.');return;}
+  localStorage.setItem('genealog_apikey',k);
+  closeModal('modal-import');
+  e('file-input').value='';e('file-input').click();
+}
+async function handleFileSelected(evt){
+  const file=evt.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async()=>{
+    const b64=reader.result.split(',')[1];
+    await doTranscribe(b64,file.type,file.name);
+  };
+  reader.readAsDataURL(file);
+}
+async function doTranscribe(b64,mediaType,filename){
+  e('upload-overlay').classList.remove('hidden');
+  const errEl=e('act-error');if(errEl)errEl.classList.add('hidden');
+  try{
+    const isImage=mediaType.startsWith('image/');
+    const contentBlock=isImage
+      ?{type:'image',source:{type:'base64',media_type:mediaType,data:b64}}
+      :{type:'document',source:{type:'base64',media_type:'application/pdf',data:b64}};
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':localStorage.getItem('genealog_apikey'),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-5',max_tokens:1000,
+        system:`Tu es un expert en paléographie et généalogie française. Tu transcris des actes d'état civil anciens.
+Retourne UNIQUEMENT un JSON valide sans markdown ni backticks:
+{"transcription":"...","type":"naissance|mariage|décès|autre","fields":{"nom":"","prenom":"","date":"","lieu":"","pere":"","mere":"","temoins":[],"profession":"","age":""},"uncertain":[]}`,
+        messages:[{role:'user',content:[contentBlock,{type:'text',text:`Transcris cet acte (fichier: ${filename})`}]}]
+      })
+    });
+    if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error(err.error?.message||`Erreur API ${res.status}`);}
+    const data=await res.json();
+    const text=data.content.map(b=>b.text||'').join('');
+    const result=JSON.parse(text.replace(/```json|```/g,'').trim());
+    const newAct={
+      id:`act-${Date.now()}`,type:result.type||'autre',
+      title:`Acte de ${result.type||'état civil'} — ${result.fields?.nom||'inconnu'}`,
+      date:result.fields?.date||'',lieu:result.fields?.lieu||'',famille:result.fields?.nom||'',
+      tags:[],transcription:result.transcription,fields:result.fields||{},
+      uncertain:result.uncertain||[],personIds:[],
+    };
+    if(isImage){
+      const dataUrl=`data:${mediaType};base64,${b64}`;
+      newAct.imageData=dataUrl;
+      await saveImage(newAct.id,dataUrl);
+    }
+    DB.acts.push(newAct);
+    upsertPersonFromAct(newAct);
+    await save();renderActs();openActDetail(newAct.id);
+  }catch(err){
+    if(errEl){errEl.textContent='⚠ '+(err.message||'Erreur de transcription');errEl.classList.remove('hidden');}
+    showTab('actes');
+  }finally{e('upload-overlay').classList.add('hidden');}
+}
+
+// ─── Persons ───────────────────────────────────────────────────────────────────
+function renderPersons(){
+  const q=(e('person-search')||{value:''}).value.toLowerCase();
+  const list=DB.persons.filter(p=>!q||pLabel(p).toLowerCase().includes(q)||(p.nomPere||'').toLowerCase().includes(q)||(p.nomMere||'').toLowerCase().includes(q));
+  // Group by nom de famille
+  const grouped={};
+  list.forEach(p=>{const key=p.nom||'—';if(!grouped[key])grouped[key]=[];grouped[key].push(p);});
+  const sortedFamilies=Object.keys(grouped).sort();
+  const el=e('persons-list');if(!el)return;
+  if(list.length===0){el.innerHTML=`<p style="color:var(--muted);text-align:center;margin-top:40px">Aucune personne trouvée</p>`;return;}
+  el.innerHTML=sortedFamilies.map(fam=>{
+    const members=grouped[fam].sort((a,b)=>(a.prenom||'').localeCompare(b.prenom||''));
+    return`<div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;padding-left:4px">Famille ${esc(fam)}</div>
+      ${members.map(p=>{
+        const parentsLabel=pParentsLabel(p);
+        return`<div class="card" onclick="openPersonDetail('${p.id}')" style="cursor:pointer;margin-bottom:8px">
+          <div class="card-title" style="font-size:15px">${esc(pLabel(p))}</div>
+          ${p.profession?`<p class="card-sub">${esc(p.profession)}</p>`:''}
+          ${parentsLabel?`<p style="font-size:12px;color:var(--subtle);margin-top:4px">${esc(parentsLabel)}</p>`:''}
+          <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px">
+            ${p.naissance?`<span style="font-size:12px;color:var(--muted)">Né(e) ${fmtDate(p.naissance)}</span>`:''}
+            ${p.lieuNaissance?`<span style="font-size:12px;color:var(--muted)">${esc(p.lieuNaissance)}</span>`:''}
+          </div>
+          <p style="color:var(--blue2);font-size:12px;margin-top:6px">${p.actIds?.length||0} acte(s)</p>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function openPersonDetail(id){
+  const p=DB.persons.find(x=>x.id===id);if(!p)return;
+  const pere=DB.persons.find(x=>x.id===p.parentIds?.[0]);
+  const mere=DB.persons.find(x=>x.id===p.parentIds?.[1]);
+  const conjoint=DB.persons.find(x=>x.id===p.conjointId);
+  const enfants=DB.persons.filter(x=>p.enfantIds?.includes(x.id));
+  const personActs=DB.acts.filter(a=>p.actIds?.includes(a.id));
+  const rels=[[pere,'Père'],[mere,'Mère'],[conjoint,'Conjoint(e)'],...enfants.map(en=>[en,'Enfant'])].filter(([r])=>r);
+  const filiationInfo=[];
+  if(p.prenomPere||p.nomPere)filiationInfo.push(`<div class="fitem"><label>Père</label><p>${esc([p.prenomPere,p.nomPere].filter(Boolean).join(' '))}</p></div>`);
+  else if(pere)filiationInfo.push(`<div class="fitem"><label>Père</label><p>${esc(pLabel(pere))}</p></div>`);
+  if(p.prenomMere||p.nomMere)filiationInfo.push(`<div class="fitem"><label>Mère</label><p>${esc([p.prenomMere,p.nomMere].filter(Boolean).join(' '))}</p></div>`);
+  else if(mere)filiationInfo.push(`<div class="fitem"><label>Mère</label><p>${esc(pLabel(mere))}</p></div>`);
+  e('person-detail-content').innerHTML=`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:4px">
+      <h2 style="font-size:22px;flex:1">${esc(pLabel(p))}</h2>
+      <button class="btn btn-outline btn-sm" onclick="openEditPerson('${p.id}')">✎ Modifier</button>
+    </div>
+    ${p.profession?`<p class="card-sub" style="margin-bottom:16px">${esc(p.profession)}</p>`:'<div style="margin-bottom:16px"></div>'}
+    <div class="card"><div class="slabel">Informations</div><div class="fgrid">
+      ${p.naissance?`<div class="fitem"><label>Naissance</label><p>${fmtDate(p.naissance)}${p.lieuNaissance?' — '+esc(p.lieuNaissance):''}</p></div>`:''}
+      ${p.deces?`<div class="fitem"><label>Décès</label><p>${fmtDate(p.deces)}${p.lieuDeces?' — '+esc(p.lieuDeces):''}</p></div>`:''}
+      ${filiationInfo.join('')}
+    </div></div>
+    ${rels.length?`<div class="card"><div class="slabel">Liens familiaux</div>${rels.map(([r,role])=>`<div class="rel-link" onclick="openPersonDetail('${r.id}')"><span class="rel-role">${role}</span><span class="rel-name">${esc(pLabel(r))}</span></div>`).join('')}</div>`:''}
+    ${personActs.length?`<div class="card"><div class="slabel">Actes associés</div>${personActs.map(a=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">${badge(a.type)}<div><p style="font-size:13px">${esc(a.title)}</p><p class="card-sub">${fmtDate(a.date)}</p></div></div>`).join('')}</div>`:''}
+    <button class="btn btn-danger" onclick="deletePerson('${p.id}')">🗑 Supprimer cette personne</button>`;
+  showScreen('person-detail');
+}
+
+async function deletePerson(id){
+  if(!confirm('Supprimer cette personne ?'))return;
+  DB.persons=DB.persons.filter(p=>p.id!==id).map(p=>({...p,parentIds:(p.parentIds||[]).filter(x=>x!==id),enfantIds:(p.enfantIds||[]).filter(x=>x!==id),conjointId:p.conjointId===id?null:p.conjointId}));
+  await save();showTab('personnes');
+}
+function openEditPerson(id){
+  const p=DB.persons.find(x=>x.id===id);if(!p)return;
+  e('person-edit-title').textContent=`Modifier ${pLabel(p)}`;
+  e('person-edit-back').onclick=()=>openPersonDetail(id);
+  const fields=[['Prénom','prenom'],['Nom','nom'],['Date naissance (JJ/MM/AAAA)','naissance'],['Lieu de naissance','lieuNaissance'],['Date de décès (JJ/MM/AAAA)','deces'],['Lieu de décès','lieuDeces'],['Profession','profession']];
+  const parentFields=[['Prénom du père','prenomPere'],['Nom du père','nomPere'],['Prénom de la mère','prenomMere'],['Nom de la mère','nomMere']];
+  const dateKeys=['naissance','deces'];
+  e('person-edit-form').innerHTML=
+    fields.map(([label,key])=>`<div class="field-group"><label>${label}</label><input class="input" id="ep-${key}" value="${esc(dateKeys.includes(key)?toDisplay(p[key]||''):p[key]||'')}" placeholder="${dateKeys.includes(key)?'ex: 11/03/1869':label}"></div>`).join('')+
+    `<hr class="divider"><p class="section-title">Filiation</p>`+
+    parentFields.map(([label,key])=>`<div class="field-group"><label>${label}</label><input class="input" id="ep-${key}" value="${esc(p[key]||'')}" placeholder="${label}"></div>`).join('')+
+    `<button class="btn btn-gold" onclick="savePersonEdit('${id}')">✓ Enregistrer</button>`;
+  showScreen('person-edit');
+}
+async function savePersonEdit(id){
+  const fields=['prenom','nom','naissance','lieuNaissance','deces','lieuDeces','profession','prenomPere','nomPere','prenomMere','nomMere'];
+  const dateFields=['naissance','deces'];
+  const patch={};fields.forEach(k=>{const v=e('ep-'+k)?.value?.trim();patch[k]=dateFields.includes(k)?toInternal(v||'')||null:v||null;});
+  if(!patch.prenom||!patch.nom){alert('Le prénom et le nom sont obligatoires.');return;}
+  DB.persons=DB.persons.map(p=>p.id===id?{...p,...patch}:p);await save();openPersonDetail(id);
+}
+function openAddPersonModal(){e('modal-add-person').classList.remove('hidden');}
+async function addPerson(){
+  const prenom=e('np-prenom').value.trim(),nom=e('np-nom').value.trim();
+  if(!prenom||!nom){alert('Le prénom et le nom sont obligatoires.');return;}
+  const p={id:`p-${Date.now()}`,prenom,nom,
+    naissance:toInternal(e('np-naissance').value.trim())||null,lieuNaissance:e('np-lieuNaissance').value.trim()||null,
+    profession:e('np-profession').value.trim()||null,
+    prenomPere:e('np-prenomPere').value.trim()||null,nomPere:e('np-nomPere').value.trim()||null,
+    prenomMere:e('np-prenomMere').value.trim()||null,nomMere:e('np-nomMere').value.trim()||null,
+    deces:null,lieuDeces:null,actIds:[],parentIds:[],enfantIds:[],conjointId:null};
+  DB.persons.push(p);await save();
+  ['np-prenom','np-nom','np-naissance','np-lieuNaissance','np-profession','np-prenomPere','np-nomPere','np-prenomMere','np-nomMere'].forEach(id=>{const el=e(id);if(el)el.value='';});
+  closeModal('modal-add-person');renderPersons();
+}
+
+// ─── Export ────────────────────────────────────────────────────────────────────
+function renderExport(){
+  // Build list of families
+  const familles=[...new Set(DB.acts.map(a=>a.famille).filter(Boolean))].sort();
+  const exportOptions=[
+    {icon:'📋',title:'Tous les actes',sub:`${DB.acts.length} actes au total`,fn:'exportAllActs'},
+    {icon:'👥',title:'Toutes les personnes',sub:`${DB.persons.length} personnes`,fn:'exportAllPersons'},
+    {icon:'🌳',title:'Arbre généalogique',sub:'Vue actuelle en PDF',fn:'exportTreePDF'},
+    ...familles.map(f=>({icon:'👨‍👩‍👧',title:`Famille ${f}`,sub:`${DB.acts.filter(a=>a.famille===f).length} actes`,fn:`exportFamille`,arg:f})),
+    {icon:'💒',title:'Actes de naissance',sub:`${DB.acts.filter(a=>a.type==='naissance').length} actes`,fn:'exportByType',arg:'naissance'},
+    {icon:'💍',title:'Actes de mariage',sub:`${DB.acts.filter(a=>a.type==='mariage').length} actes`,fn:'exportByType',arg:'mariage'},
+    {icon:'✝',title:'Actes de décès',sub:`${DB.acts.filter(a=>a.type==='décès').length} actes`,fn:'exportByType',arg:'décès'},
+    {icon:'💾',title:'Sauvegarde complète (JSON)',sub:'Toutes les données brutes',fn:'exportJSON'},
+  ];
+  e('export-list').innerHTML=exportOptions.map(o=>`
+    <div class="export-card" onclick="${o.fn}(${o.arg?`'${o.arg}'`:''})">
+      <div class="ec-icon">${o.icon}</div>
+      <div><div class="ec-title">${o.title}</div><div class="ec-sub">${o.sub}</div></div>
+      <span style="color:var(--muted);font-size:18px;margin-left:auto">›</span>
+    </div>`).join('');
+}
+
+function buildActsHTML(acts,title){
+  const rows=acts.map(a=>{
+    const f=a.fields||{};
+    return`<tr style="border-bottom:1px solid #243348">
+      <td style="padding:10px 8px;color:#e8edf5;font-weight:700">${esc(a.title)}</td>
+      <td style="padding:10px 8px;color:#7a92b0">${ACT_INFO[a.type]?.label||a.type}</td>
+      <td style="padding:10px 8px;color:#7a92b0">${fmtDate(a.date)}</td>
+      <td style="padding:10px 8px;color:#7a92b0">${esc(a.lieu||'')}</td>
+      <td style="padding:10px 8px;color:#7a92b0">${esc(f.nom||'')} ${esc(f.prenom||'')}</td>
+      <td style="padding:10px 8px;color:#7a92b0">${esc(f.pere||'')}</td>
+      <td style="padding:10px 8px;color:#7a92b0">${esc(f.mere||'')}</td>
+    </tr>`;
+  }).join('');
+  return`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(title)}</title></head>
+<body style="background:#0c1118;font-family:Lato,sans-serif;padding:32px;color:#e8edf5">
+<h1 style="font-size:24px;margin-bottom:4px;color:#c9a84c">Généalogie</h1>
+<h2 style="font-size:18px;margin-bottom:24px;color:#e8edf5">${esc(title)}</h2>
+<p style="color:#7a92b0;margin-bottom:24px;font-size:13px">Exporté le ${new Date().toLocaleDateString('fr-FR')} · ${acts.length} acte(s)</p>
+<table style="width:100%;border-collapse:collapse;font-size:13px">
+<thead><tr style="background:#1a2436"><th style="padding:10px 8px;text-align:left;color:#c9a84c">Titre</th><th style="padding:10px 8px;text-align:left;color:#c9a84c">Type</th><th style="padding:10px 8px;text-align:left;color:#c9a84c">Date</th><th style="padding:10px 8px;text-align:left;color:#c9a84c">Lieu</th><th style="padding:10px 8px;text-align:left;color:#c9a84c">Personne</th><th style="padding:10px 8px;text-align:left;color:#c9a84c">Père</th><th style="padding:10px 8px;text-align:left;color:#c9a84c">Mère</th></tr></thead>
+<tbody>${rows}</tbody></table>
+${acts.map(a=>a.transcription?`<div style="margin-top:32px;padding:20px;background:#1a2436;border-radius:8px;border-left:3px solid #c9a84c"><h3 style="color:#c9a84c;margin-bottom:8px;font-size:14px">${esc(a.title)}</h3><pre style="color:#e8edf5;font-size:12px;white-space:pre-wrap;font-family:Courier New,monospace">${esc(a.transcription)}</pre></div>`:'').join('')}
+</body></html>`;
+}
+
+function openPrint(html){
+  const w=window.open('','_blank');
+  if(w){w.document.write(html);w.document.close();setTimeout(()=>w.print(),600);}
+  else alert('Active les popups Safari pour exporter, ou utilise le bouton Partage.');
+}
+
+function exportAllActs(){openPrint(buildActsHTML(DB.acts,'Tous les actes'));}
+function exportByType(type){openPrint(buildActsHTML(DB.acts.filter(a=>a.type===type),`Actes de ${type}`));}
+function exportFamille(f){openPrint(buildActsHTML(DB.acts.filter(a=>a.famille===f),`Famille ${f}`));}
+
+function exportAllPersons(){
+  const rows=DB.persons.map(p=>`<tr style="border-bottom:1px solid #243348">
+    <td style="padding:10px 8px;color:#e8edf5;font-weight:700">${esc(p.prenom)} ${esc(p.nom)}</td>
+    <td style="padding:10px 8px;color:#7a92b0">${esc(p.profession||'')}</td>
+    <td style="padding:10px 8px;color:#7a92b0">${fmtDate(p.naissance)}${p.lieuNaissance?' — '+esc(p.lieuNaissance):''}</td>
+    <td style="padding:10px 8px;color:#7a92b0">${p.deces?fmtDate(p.deces)+(p.lieuDeces?' — '+esc(p.lieuDeces):''):'—'}</td>
+    <td style="padding:10px 8px;color:#7a92b0">${p.actIds?.length||0}</td>
+  </tr>`).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Personnes</title></head>
+<body style="background:#0c1118;font-family:Lato,sans-serif;padding:32px;color:#e8edf5">
+<h1 style="color:#c9a84c;margin-bottom:4px">Généalogie</h1><h2 style="margin-bottom:24px">Toutes les personnes</h2>
+<p style="color:#7a92b0;margin-bottom:24px;font-size:13px">Exporté le ${new Date().toLocaleDateString('fr-FR')} · ${DB.persons.length} personne(s)</p>
+<table style="width:100%;border-collapse:collapse;font-size:13px">
+<thead><tr style="background:#1a2436"><th style="padding:10px 8px;text-align:left;color:#c9a84c">Nom</th><th style="padding:10px 8px;text-align:left;color:#c9a84c">Profession</th><th style="padding:10px 8px;text-align:left;color:#c9a84c">Naissance</th><th style="padding:10px 8px;text-align:left;color:#c9a84c">Décès</th><th style="padding:10px 8px;text-align:left;color:#c9a84c">Actes</th></tr></thead>
+<tbody>${rows}</tbody></table></body></html>`;
+  openPrint(html);
+}
+
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`genealogie_${new Date().toISOString().slice(0,10)}.json`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Tree ──────────────────────────────────────────────────────────────────────
+const TREE_STYLES=[{id:'vertical',label:'↕ Vertical'},{id:'horizontal',label:'↔ Horizontal'},{id:'fan',label:'❋ Éventail'},{id:'compact',label:'▤ Compact'}];
+let treeStyle=localStorage.getItem('genealog_tree_style')||'vertical';
+
+// Node styles
+const NODE_STYLES=[
+  {id:'rect',    label:'Rectangle classique', desc:'Coins droits, sobre'},
+  {id:'rounded', label:'Arrondi doux',         desc:'Coins très arrondis'},
+  {id:'pill',    label:'Pilule',               desc:'Forme ovale allongée'},
+  {id:'diamond', label:'Losange',              desc:'Forme en losange pivotée'},
+  {id:'badge',   label:'Badge coloré',         desc:'Couleur selon génération'},
+  {id:'minimal', label:'Minimaliste',          desc:'Texte seul, pas de fond'},
+];
+let nodeStyle=localStorage.getItem('genealog_node_style')||'rounded';
+const GEN_COLORS=['#4a90d9','#3a9e7a','#c9a84c','#9d8cfa','#e05a4b','#52c49a'];
+
+function setTreeStyle(s){treeStyle=s;localStorage.setItem('genealog_tree_style',s);renderTree();}
+function setNodeStyle(s){nodeStyle=s;localStorage.setItem('genealog_node_style',s);}
+
+function renderTreeStyleChips(){
+  const el=e('tree-style-chips');if(!el)return;
+  el.innerHTML=TREE_STYLES.map(s=>`<div class="chip ${treeStyle===s.id?'active':''}" onclick="setTreeStyle('${s.id}')">${s.label}</div>`).join('');
+}
+
+function openTreeOptions(){
+  const el=e('node-style-options');if(!el)return;
+  el.innerHTML=NODE_STYLES.map(s=>`
+    <div onclick="setNodeStyle('${s.id}');document.querySelectorAll('.ns-opt').forEach(x=>x.classList.remove('ns-sel'));this.classList.add('ns-sel')"
+      class="ns-opt ${nodeStyle===s.id?'ns-sel':''}"
+      style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;border:2px solid ${nodeStyle===s.id?'var(--gold)':'var(--border)'};background:var(--card);margin-bottom:8px;cursor:pointer;transition:border-color .2s">
+      <div style="width:44px;height:28px;flex-shrink:0">${previewNode(s.id)}</div>
+      <div><div style="font-size:14px;font-weight:700;color:var(--text)">${s.label}</div><div style="font-size:11px;color:var(--muted)">${s.desc}</div></div>
+    </div>`).join('');
+  // live border update
+  e('modal-tree-options').querySelectorAll('.ns-opt').forEach(el=>{
+    el.addEventListener('click',()=>{
+      e('modal-tree-options').querySelectorAll('.ns-opt').forEach(x=>{x.style.borderColor='var(--border)';});
+      el.style.borderColor='var(--gold)';
+    });
+  });
+  e('modal-tree-options').classList.remove('hidden');
+}
+
+function previewNode(style){
+  const C={nodeF:'#1a2436',nodeS:'#2e4060',textC:'#e8edf5'};
+  const W=44,H=28;
+  if(style==='rect') return`<svg width="${W}" height="${H}"><rect width="${W}" height="${H}" rx="0" fill="${C.nodeF}" stroke="${C.nodeS}" stroke-width="1.5"/><text x="${W/2}" y="18" text-anchor="middle" fill="${C.textC}" font-size="8" font-family="Lato,sans-serif">Nom</text></svg>`;
+  if(style==='rounded') return`<svg width="${W}" height="${H}"><rect width="${W}" height="${H}" rx="10" fill="${C.nodeF}" stroke="${C.nodeS}" stroke-width="1.5"/><text x="${W/2}" y="18" text-anchor="middle" fill="${C.textC}" font-size="8" font-family="Lato,sans-serif">Nom</text></svg>`;
+  if(style==='pill') return`<svg width="${W}" height="${H}"><rect width="${W}" height="${H}" rx="${H/2}" fill="${C.nodeF}" stroke="${C.nodeS}" stroke-width="1.5"/><text x="${W/2}" y="18" text-anchor="middle" fill="${C.textC}" font-size="8" font-family="Lato,sans-serif">Nom</text></svg>`;
+  if(style==='diamond') return`<svg width="${W}" height="${H}"><polygon points="${W/2},2 ${W-2},${H/2} ${W/2},${H-2} 2,${H/2}" fill="${C.nodeF}" stroke="${C.nodeS}" stroke-width="1.5"/><text x="${W/2}" y="18" text-anchor="middle" fill="${C.textC}" font-size="7" font-family="Lato,sans-serif">Nom</text></svg>`;
+  if(style==='badge') return`<svg width="${W}" height="${H}"><rect width="${W}" height="${H}" rx="6" fill="#4a90d9" stroke="none"/><text x="${W/2}" y="18" text-anchor="middle" fill="#fff" font-size="8" font-family="Lato,sans-serif" font-weight="700">Nom</text></svg>`;
+  if(style==='minimal') return`<svg width="${W}" height="${H}"><text x="${W/2}" y="12" text-anchor="middle" fill="${C.textC}" font-size="8" font-family="Lato,sans-serif" font-weight="700">Prénom</text><text x="${W/2}" y="24" text-anchor="middle" fill="#7a92b0" font-size="7" font-family="Lato,sans-serif">Nom</text></svg>`;
+  return '';
+}
+
+function treeColors(){
+  const light=document.body.classList.contains('light');
+  return{nodeF:light?'#ffffff':'#1a2436',nodeS:light?'#cfc3ae':'#2e4060',textC:light?'#1e1a14':'#e8edf5',mutedC:light?'#6b5e4a':'#7a92b0',subtleC:light?'#a8967e':'#3d5270',edgeC:light?'#a8967e':'#475569',conjC:light?'#a0720e':'#c9a84c'};
+}
+
+function nodesvg(p,x,y,NW,NH,C,genIdx){
+  const yr=p.naissance?p.naissance.slice(0,4)+(p.deces?'–'+p.deces.slice(0,4):''):'';
+  const ci=GEN_COLORS[genIdx%GEN_COLORS.length];
+  const s=nodeStyle;
+  let inner='';
+  if(s==='rect'){
+    inner=`<rect width="${NW}" height="${NH}" rx="0" fill="${C.nodeF}" stroke="${C.nodeS}" stroke-width="1.5"/>`;
+  }else if(s==='rounded'){
+    inner=`<rect width="${NW}" height="${NH}" rx="10" fill="${C.nodeF}" stroke="${C.nodeS}" stroke-width="1.5"/>`;
+  }else if(s==='pill'){
+    inner=`<rect width="${NW}" height="${NH}" rx="${NH/2}" fill="${C.nodeF}" stroke="${C.nodeS}" stroke-width="1.5"/>`;
+  }else if(s==='diamond'){
+    const hw=NW/2,hh=NH/2;
+    inner=`<polygon points="${hw},0 ${NW},${hh} ${hw},${NH} 0,${hh}" fill="${C.nodeF}" stroke="${C.nodeS}" stroke-width="1.5"/>`;
+  }else if(s==='badge'){
+    inner=`<rect width="${NW}" height="${NH}" rx="8" fill="${ci}" stroke="none"/>`;
+  }else if(s==='minimal'){
+    // no background
+  }
+  const textFill=s==='badge'?'#ffffff':(s==='minimal'?C.textC:C.textC);
+  const mutedFill=s==='badge'?'rgba(255,255,255,0.75)':(s==='minimal'?C.mutedC:C.mutedC);
+  const subFill=s==='badge'?'rgba(255,255,255,0.55)':(s==='minimal'?C.subtleC:C.subtleC);
+  const hasBorder=s==='minimal'?`<line x1="0" y1="${NH+2}" x2="${NW}" y2="${NH+2}" stroke="${C.nodeS}" stroke-width="0.5"/>`:'';
+  // Delete button (small × in top-right corner)
+  const delBtn=`<g class="tree-del-btn" onclick="deletePersonFromTree('${p.id}')" style="cursor:pointer">
+    <circle cx="${NW-6}" cy="6" r="6" fill="#c0392b" fill-opacity="0.85"/>
+    <text x="${NW-6}" y="10" text-anchor="middle" fill="#fff" font-size="8" font-family="sans-serif">×</text>
+  </g>`;
+  return`<g transform="translate(${x},${y})">
+    ${inner}
+    <text x="${NW/2}" y="${NH*0.38}" text-anchor="middle" fill="${textFill}" font-size="12" font-weight="700" font-family="Lato,sans-serif">${esc(p.prenom)}</text>
+    <text x="${NW/2}" y="${NH*0.62}" text-anchor="middle" fill="${mutedFill}" font-size="11" font-family="Lato,sans-serif">${esc(p.nom)}</text>
+    ${yr?`<text x="${NW/2}" y="${NH*0.85}" text-anchor="middle" fill="${subFill}" font-size="9" font-family="Lato,sans-serif">${yr}</text>`:''}
+    ${hasBorder}
+    ${delBtn}
+  </g>`;
+}
+
+async function deletePersonFromTree(id){
+  if(!confirm('Supprimer cette personne de l\'arbre et de la base ?'))return;
+  DB.persons=DB.persons.filter(p=>p.id!==id).map(p=>({...p,parentIds:(p.parentIds||[]).filter(x=>x!==id),enfantIds:(p.enfantIds||[]).filter(x=>x!==id),conjointId:p.conjointId===id?null:p.conjointId}));
+  await save();renderTree();
+}
+
+function normalizeFamilyLinks(){
+  // Ensure parentIds and enfantIds are consistent
+  DB.persons.forEach(p=>{
+    if(!p.parentIds)p.parentIds=[];
+    if(!p.enfantIds)p.enfantIds=[];
+    p.parentIds.forEach(pid=>{
+      const parent=DB.persons.find(x=>x.id===pid);
+      if(parent&&!parent.enfantIds.includes(p.id))parent.enfantIds.push(p.id);
+    });
+    p.enfantIds.forEach(cid=>{
+      const child=DB.persons.find(x=>x.id===cid);
+      if(child&&!child.parentIds.includes(p.id))child.parentIds.push(p.id);
+    });
+  });
+}
+
+function buildGenLayout(NW,NH,HG,VG){
+  const layout={},genMap={},genCount={},genOf={},visited=new Set();
+  const roots=DB.persons.filter(p=>!p.parentIds?.length);
+  function assign(id,gen){
+    if(visited.has(id))return;visited.add(id);
+    if(!genCount[gen])genCount[gen]=0;
+    if(!genMap[gen])genMap[gen]=[];
+    layout[id]={x:genCount[gen]*(NW+HG),y:gen*(NH+VG)};
+    genOf[id]=gen;genMap[gen].push(id);genCount[gen]++;
+    DB.persons.find(p=>p.id===id)?.enfantIds?.forEach(c=>assign(c,gen+1));
+  }
+  roots.forEach(r=>assign(r.id,0));
+  const maxW=Math.max(1,...Object.values(genCount).map(Number))*(NW+HG);
+  Object.entries(genMap).forEach(([gen,ids])=>{const rw=ids.length*(NW+HG),off=(maxW-rw)/2;ids.forEach(id=>{if(layout[id])layout[id].x+=off;});});
+  return{layout,genOf,totalH:Object.keys(genCount).length*(NH+VG)+60,totalW:maxW+40};
+}
+
+function renderVertical(C){
+  const NW=140,NH=60,HG=20,VG=72;
+  const{layout,genOf,totalW,totalH}=buildGenLayout(NW,NH,HG,VG);
+  let edges='',nodes='';
+  DB.persons.forEach(p=>{
+    p.parentIds?.forEach(pid=>{if(layout[p.id]&&layout[pid]){const f=layout[pid],t=layout[p.id],my=(f.y+NH+t.y)/2;edges+=`<path d="M${f.x+NW/2},${f.y+NH} C${f.x+NW/2},${my} ${t.x+NW/2},${my} ${t.x+NW/2},${t.y}" fill="none" stroke="${C.edgeC}" stroke-width="1.5"/>`;} });
+    if(p.conjointId&&layout[p.id]&&layout[p.conjointId]&&p.id<p.conjointId){const a=layout[p.id],b=layout[p.conjointId];if(Math.abs(a.y-b.y)<10)edges+=`<line x1="${a.x+NW}" y1="${a.y+NH/2}" x2="${b.x}" y2="${b.y+NH/2}" stroke="${C.conjC}" stroke-width="1.5" stroke-dasharray="5,4"/>`;}
+  });
+  DB.persons.filter(p=>layout[p.id]).forEach(p=>{nodes+=nodesvg(p,layout[p.id].x,layout[p.id].y,NW,NH,C,genOf[p.id]||0);});
+  return`<svg width="${totalW}" height="${totalH}" xmlns="http://www.w3.org/2000/svg">${edges}${nodes}</svg>`;
+}
+
+function renderHorizontal(C){
+  const layout={},genMap={},genCount={},genOf={},visited=new Set();
+  const roots=DB.persons.filter(p=>!p.parentIds?.length);
+  function assign(id,gen){if(visited.has(id))return;visited.add(id);if(!genCount[gen])genCount[gen]=0;if(!genMap[gen])genMap[gen]=[];layout[id]={col:gen,row:genCount[gen]};genOf[id]=gen;genMap[gen].push(id);genCount[gen]++;DB.persons.find(p=>p.id===id)?.enfantIds?.forEach(c=>assign(c,gen+1));}
+  roots.forEach(r=>assign(r.id,0));
+  const NW=140,NH=58,HG=80,VG=18;
+  const maxRows=Math.max(1,...Object.values(genCount).map(Number));
+  const totalH=maxRows*(NH+VG)+40;
+  Object.entries(genMap).forEach(([gen,ids])=>{const colH=ids.length*(NH+VG),off=(totalH-colH)/2;ids.forEach((id,i)=>{layout[id].x=parseInt(gen)*(NW+HG)+20;layout[id].y=off+i*(NH+VG);});});
+  const totalW=Object.keys(genCount).length*(NW+HG)+40;
+  let edges='',nodes='';
+  DB.persons.forEach(p=>{
+    p.parentIds?.forEach(pid=>{if(layout[p.id]&&layout[pid]){const f=layout[pid],t=layout[p.id],mx=(f.x+NW+t.x)/2;edges+=`<path d="M${f.x+NW},${f.y+NH/2} C${mx},${f.y+NH/2} ${mx},${t.y+NH/2} ${t.x},${t.y+NH/2}" fill="none" stroke="${C.edgeC}" stroke-width="1.5"/>`;} });
+    if(p.conjointId&&layout[p.id]&&layout[p.conjointId]&&p.id<p.conjointId){const a=layout[p.id],b=layout[p.conjointId];if(Math.abs(a.x-b.x)<10)edges+=`<line x1="${a.x+NW/2}" y1="${a.y+NH}" x2="${b.x+NW/2}" y2="${b.y}" stroke="${C.conjC}" stroke-width="1.5" stroke-dasharray="5,4"/>`;}
+  });
+  DB.persons.filter(p=>layout[p.id]).forEach(p=>{nodes+=nodesvg(p,layout[p.id].x,layout[p.id].y,NW,NH,C,genOf[p.id]||0);});
+  return`<svg width="${totalW}" height="${totalH}" xmlns="http://www.w3.org/2000/svg">${edges}${nodes}</svg>`;
+}
+
+function renderFan(C){
+  const W=700,H=700,CX=W/2,CY=H/2,NW=110,NH=50;
+  const genOf={},visited=new Set();
+  const roots=DB.persons.filter(p=>!p.parentIds?.length);
+  function assignGen(id,g){if(visited.has(id))return;visited.add(id);genOf[id]=g;DB.persons.find(p=>p.id===id)?.enfantIds?.forEach(c=>assignGen(c,g+1));}
+  roots.forEach(r=>assignGen(r.id,0));
+  const maxGen=Math.max(0,...Object.values(genOf));
+  const byGen={};Object.entries(genOf).forEach(([id,g])=>{byGen[g]=byGen[g]||[];byGen[g].push(id);});
+  const Rstep=Math.min(90,(Math.min(W,H)/2-60)/(maxGen||1));
+  const layout={};
+  Object.entries(byGen).forEach(([g,ids])=>{const gen=parseInt(g),r=gen===0?0:gen*Rstep+40;ids.forEach((id,i)=>{const total=ids.length,angle=total===1?-Math.PI/2:-Math.PI/2+(2*Math.PI/total)*i;layout[id]={x:CX+r*Math.cos(angle)-NW/2,y:CY+r*Math.sin(angle)-NH/2,cx:CX+r*Math.cos(angle),cy:CY+r*Math.sin(angle)};});});
+  let edges='',nodes='';
+  DB.persons.forEach(p=>{
+    p.parentIds?.forEach(pid=>{if(layout[p.id]&&layout[pid])edges+=`<line x1="${layout[pid].cx}" y1="${layout[pid].cy}" x2="${layout[p.id].cx}" y2="${layout[p.id].cy}" stroke="${C.edgeC}" stroke-width="1.5"/>`;});
+    if(p.conjointId&&layout[p.id]&&layout[p.conjointId]&&p.id<p.conjointId)edges+=`<line x1="${layout[p.id].cx}" y1="${layout[p.id].cy}" x2="${layout[p.conjointId].cx}" y2="${layout[p.conjointId].cy}" stroke="${C.conjC}" stroke-width="1.5" stroke-dasharray="5,4"/>`;
+  });
+  DB.persons.filter(p=>layout[p.id]).forEach(p=>{nodes+=nodesvg(p,layout[p.id].x,layout[p.id].y,NW,NH,C,genOf[p.id]||0);});
+  return`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">${edges}${nodes}</svg>`;
+}
+
+function renderCompact(C){
+  const NW=120,NH=44,HG=14,VG=52;
+  const{layout,genOf,totalW,totalH}=buildGenLayout(NW,NH,HG,VG);
+  let edges='',nodes='';
+  DB.persons.forEach(p=>{
+    p.parentIds?.forEach(pid=>{if(layout[p.id]&&layout[pid]){const f=layout[pid],t=layout[p.id];edges+=`<line x1="${f.x+NW/2}" y1="${f.y+NH}" x2="${t.x+NW/2}" y2="${t.y}" stroke="${C.edgeC}" stroke-width="1"/>`;} });
+    if(p.conjointId&&layout[p.id]&&layout[p.conjointId]&&p.id<p.conjointId){const a=layout[p.id],b=layout[p.conjointId];if(Math.abs(a.y-b.y)<10)edges+=`<line x1="${a.x+NW}" y1="${a.y+NH/2}" x2="${b.x}" y2="${b.y+NH/2}" stroke="${C.conjC}" stroke-width="1" stroke-dasharray="4,3"/>`;}
+  });
+  DB.persons.filter(p=>layout[p.id]).forEach(p=>{nodes+=nodesvg(p,layout[p.id].x,layout[p.id].y,NW,NH,C,genOf[p.id]||0);});
+  return`<svg width="${totalW}" height="${totalH}" xmlns="http://www.w3.org/2000/svg">${edges}${nodes}</svg>`;
+}
+
+function renderTree(){
+  normalizeFamilyLinks();
+  renderTreeStyleChips();
+  const C=treeColors();
+  let svg='';
+  if(treeStyle==='vertical')svg=renderVertical(C);
+  else if(treeStyle==='horizontal')svg=renderHorizontal(C);
+  else if(treeStyle==='fan')svg=renderFan(C);
+  else if(treeStyle==='compact')svg=renderCompact(C);
+  e('tree-svg-wrap').innerHTML=svg;
+}
+
+function exportTreePDF(){
+  const C={nodeF:'#1a2436',nodeS:'#2e4060',textC:'#e8edf5',mutedC:'#7a92b0',subtleC:'#3d5270',edgeC:'#475569',conjC:'#c9a84c'};
+  let svg='';
+  if(treeStyle==='vertical')svg=renderVertical(C);
+  else if(treeStyle==='horizontal')svg=renderHorizontal(C);
+  else if(treeStyle==='fan')svg=renderFan(C);
+  else if(treeStyle==='compact')svg=renderCompact(C);
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Arbre généalogique</title></head><body style="background:#0c1118;margin:32px;font-family:Lato,sans-serif"><h1 style="color:#c9a84c;text-align:center;margin-bottom:8px">Arbre généalogique</h1><p style="color:#7a92b0;text-align:center;margin-bottom:32px">Généré par Généalogie · ${new Date().toLocaleDateString('fr-FR')}</p>${svg}</body></html>`;
+  openPrint(html);
+}
+
+// ─── Init ──────────────────────────────────────────────────────────────────────
+applyTheme(localStorage.getItem('genealog_theme')==='light');
+openIDB().then(()=>load()).then(()=>renderHome()).catch(err=>{
+  // IndexedDB unavailable (private browsing on some browsers) — fallback
+  console.warn('IndexedDB unavailable, using localStorage',err);
+  try{const r=localStorage.getItem('genealog_v2');if(r)DB=JSON.parse(r);}catch(e){}
+  if(!DB.acts.length)DB=JSON.parse(JSON.stringify(DEMO));
+  renderHome();
+});
+</script>
+</body>
+</html>
